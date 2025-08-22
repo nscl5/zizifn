@@ -1282,191 +1282,65 @@ const HTML_TEMPLATE = `<!doctype html>
     @media (min-width: 1024px) { .container { max-width: 800px; } }
   </style>
 </head>
-<body data-proxy-ip="{{PROXY_IP}}">
+<body>
   <div class="container">
-    <div class="header">
-      <h1>VLESS Proxy Configuration</h1>
-      <p>Copy the configuration or import directly into your client</p>
-    </div>
-
+    <div class="header"> <h1>VLESS Proxy Configuration</h1> <p>Copy the configuration or import directly into your client</p> </div>
     <div class="config-card">
-      <div class="config-title">
-        <span>Network Information</span>
-        <button id="refresh-ip-info" class="refresh-btn" aria-label="Refresh IP information">
-          <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
-          </svg>
-          Refresh
-        </button>
-      </div>
-
+      <div class="config-title"> <span>Network Information</span> <button id="refresh-ip-info" class="refresh-btn" aria-label="Refresh IP information"> <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" /> </svg> Refresh </button> </div>
       <div class="ip-info-grid">
         <div class="ip-info-section">
-          <div class="ip-info-header">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v16.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h6.9c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V3.6c0-.4-.2-.8-.5-1.1-.3-.3-.7-.5-1.1-.5z"/>
-              <circle cx="12" cy="18" r="1"/>
-            </svg>
-            <h3>Proxy Server</h3>
-          </div>
+          <div class="ip-info-header"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v16.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h6.9c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V3.6c0-.4-.2-.8-.5-1.1-.3-.3-.7-.5-1.1-.5z"/> <circle cx="12" cy="18" r="1"/> </svg> <h3>Proxy Server</h3> </div>
           <div class="ip-info-content">
-            <div class="ip-info-item">
-              <span class="label">Proxy Host</span>
-              <span class="value" id="proxy-host"><span class="skeleton" style="width: 150px;"></span></span>
-            </div>
-            <div class="ip-info-item">
-              <span class="label">IP Address</span>
-              <span class="value" id="proxy-ip"><span class="skeleton" style="width: 120px;"></span></span>
-            </div>
-            <div class="ip-info-item">
-              <span class="label">Location</span>
-              <span class="value" id="proxy-location"><span class="skeleton" style="width: 100px;"></span></span>
-            </div>
-            <div class="ip-info-item">
-              <span class="label">ISP Provider</span>
-              <span class="value" id="proxy-isp"><span class="skeleton" style="width: 140px;"></span></span>
-            </div>
+            <div class="ip-info-item"> <span class="label">Proxy Host</span> <span class="value" id="proxy-host"><span class="skeleton" style="width: 150px;"></span></span> </div>
+            <div class="ip-info-item"> <span class="label">IP Address</span> <span class="value" id="proxy-ip"><span class="skeleton" style="width: 120px;"></span></span> </div>
+            <div class="ip-info-item"> <span class="label">Location</span> <span class="value" id="proxy-location"><span class="skeleton" style="width: 100px;"></span></span> </div>
+            <div class="ip-info-item"> <span class="label">ISP Provider</span> <span class="value" id="proxy-isp"><span class="skeleton" style="width: 140px;"></span></span> </div>
           </div>
         </div>
-
         <div class="ip-info-section">
-          <div class="ip-info-header">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
-            </svg>
-            <h3>Your Connection</h3>
-          </div>
+          <div class="ip-info-header"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/> </svg> <h3>Your Connection</h3> </div>
           <div class="ip-info-content">
-            <div class="ip-info-item">
-              <span class="label">Your IP</span>
-              <span class="value" id="client-ip"><span class="skeleton" style="width: 110px;"></span></span>
-            </div>
-            <div class="ip-info-item">
-              <span class="label">Location</span>
-              <span class="value" id="client-location"><span class="skeleton" style="width: 90px;"></span></span>
-            </div>
-            <div class="ip-info-item">
-              <span class="label">ISP Provider</span>
-              <span class="value" id="client-isp"><span class="skeleton" style="width: 130px;"></span></span>
-            </div>
-            <div class="ip-info-item">
-              <span class="label">Risk Score</span>
-              <span class="value" id="client-proxy">
-                <span class="skeleton" style="width: 100px;"></span>
-              </span>
-            </div>
+            <div class="ip-info-item"> <span class="label">Your IP</span> <span class="value" id="client-ip"><span class="skeleton" style="width: 110px;"></span></span> </div>
+            <div class="ip-info-item"> <span class="label">Location</span> <span class="value" id="client-location"><span class="skeleton" style="width: 90px;"></span></span> </div>
+            <div class="ip-info-item"> <span class="label">ISP Provider</span> <span class="value" id="client-isp"><span class="skeleton" style="width: 130px;"></span></span> </div>
+            <div class="ip-info-item"> <span class="label">Risk Score</span> <span class="value" id="client-proxy"> <span class="skeleton" style="width: 100px;"></span> </span> </div>
           </div>
         </div>
       </div>
     </div>
-
     <div class="config-card">
-      <div class="config-title">
-        <span>Xray Core Clients</span>
-        <button class="button copy-buttons" onclick="copyToClipboard(this, '{{DREAM_CONFIG}}')">
-          <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          Copy
-        </button>
-      </div>
-      <div class="config-content">
-        <pre id="xray-config">{{DREAM_CONFIG}}</pre>
-      </div>
-      <div class="client-buttons">
-        <a href="hiddify://install-config?url={{FREEDOM_CONFIG_ENCODED}}" class="button client-btn">
-          <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg></span>
-          <span class="button-text">Import to Hiddify</span>
-        </a>
-        <a href="v2rayng://install-config?url={{DREAM_CONFIG_ENCODED}}" class="button client-btn">
-          <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M12 2L4 5v6c0 5.5 3.5 10.7 8 12.3 4.5-1.6 8-6.8 8-12.3V5l-8-3z" /></svg></span>
-          <span class="button-text">Import to V2rayNG</span>
-        </a>
-      </div>
+      <div class="config-title"> <span>Xray Core Clients</span> <button class="button copy-buttons" onclick="copyToClipboard(this, '{{DREAM_CONFIG}}')"> <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect> <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path> </svg> Copy </button> </div>
+      <div class="config-content"> <pre id="xray-config">{{DREAM_CONFIG}}</pre> </div>
+      <div class="client-buttons"> <a href="hiddify://install-config?url={{FREEDOM_CONFIG_ENCODED}}" class="button client-btn"> <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg></span> <span class="button-text">Import to Hiddify</span> </a> <a href="v2rayng://install-config?url={{DREAM_CONFIG_ENCODED}}" class="button client-btn"> <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M12 2L4 5v6c0 5.5 3.5 10.7 8 12.3 4.5-1.6 8-6.8 8-12.3V5l-8-3z" /></svg></span> <span class="button-text">Import to V2rayNG</span> </a> </div>
     </div>
-
     <div class="config-card">
-      <div class="config-title">
-        <span>Sing-Box Core Clients</span>
-        <button class="button copy-buttons" onclick="copyToClipboard(this, '{{FREEDOM_CONFIG}}')">
-          <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          Copy
-        </button>
-      </div>
-      <div class="config-content">
-        <pre id="singbox-config">{{FREEDOM_CONFIG}}</pre>
-      </div>
-      <div class="client-buttons">
-        <a href="{{CLASH_META_URL}}" class="button client-btn">
-          <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" /></svg></span>
-          <span class="button-text">Import to Clash Meta</span>
-        </a>
-        <a href="{{NEKOBOX_URL}}" class="button client-btn">
-          <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M20,8h-3V6c0-1.1-0.9-2-2-2H9C7.9,4,7,4.9,7,6v2H4C2.9,8,2,8.9,2,10v9c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2v-9 C22,8.9,21.1,8,20,8z M9,6h6v2H9V6z M20,19H4v-2h16V19z M20,15H4v-5h3v1c0,0.55,0.45,1,1,1h1.5c0.28,0,0.5-0.22,0.5-0.5v-0.5h4v0.5 c0,0.28,0.22,0.5,0.5,0.5H16c0.55,0,1-0.45,1-1v-1h3V15z" /><circle cx="8.5" cy="13.5" r="1" /><circle cx="15.5" cy="13.5" r="1" /><path d="M12,15.5c-0.55,0-1-0.45-1-1h2C13,15.05,12.55,15.5,12,15.5z" /></svg></span>
-          <span class="button-text">Import to NekoBox</span>
-        </a>
-      </div>
+      <div class="config-title"> <span>Sing-Box Core Clients</span> <button class="button copy-buttons" onclick="copyToClipboard(this, '{{FREEDOM_CONFIG}}')"> <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect> <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path> </svg> Copy </button> </div>
+      <div class="config-content"> <pre id="singbox-config">{{FREEDOM_CONFIG}}</pre> </div>
+      <div class="client-buttons"> <a href="{{CLASH_META_URL}}" class="button client-btn"> <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" /></svg></span> <span class="button-text">Import to Clash Meta</span> </a> <a href="{{NEKOBOX_URL}}" class="button client-btn"> <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M20,8h-3V6c0-1.1-0.9-2-2-2H9C7.9,4,7,4.9,7,6v2H4C2.9,8,2,8.9,2,10v9c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2v-9 C22,8.9,21.1,8,20,8z M9,6h6v2H9V6z M20,19H4v-2h16V19z M20,15H4v-5h3v1c0,0.55,0.45,1,1,1h1.5c0.28,0,0.5-0.22,0.5-0.5v-0.5h4v0.5 c0,0.28,0.22,0.5,0.5,0.5H16c0.55,0,1-0.45,1-1v-1h3V15z" /><circle cx="8.5" cy="13.5" r="1" /><circle cx="15.5" cy="13.5" r="1" /><path d="M12,15.5c-0.55,0-1-0.45-1-1h2C13,15.05,12.55,15.5,12,15.5z" /></svg></span> <span class="button-text">Import to NekoBox</span> </a> </div>
     </div>
-
-    <div class="footer">
-      <p>© <span id="current-year">{{YEAR}}</span> REvil - All Rights Reserved</p>
-      <p>Secure. Private. Fast.</p>
-    </div>
+    <div class="footer"> <p>© <span id="current-year">{{YEAR}}</span> REvil - All Rights Reserved</p> <p>Secure. Private. Fast.</p> </div>
   </div>
-
   <script>
     function copyToClipboard(button, text) {
       const originalHTML = button.innerHTML;
-
       navigator.clipboard.writeText(text).then(() => {
-        button.innerHTML = `
-          <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          Copied!
-        `;
+        button.innerHTML = '<svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copied!';
         button.classList.add("copied");
         button.disabled = true;
-
-        setTimeout(() => {
-          button.innerHTML = originalHTML;
-          button.classList.remove("copied");
-          button.disabled = false;
-        }, 1200);
+        setTimeout(() => { button.innerHTML = originalHTML; button.classList.remove("copied"); button.disabled = false; }, 1200);
       }).catch(err => {
         console.error("Failed to copy text: ", err);
         const originalHTMLError = button.innerHTML;
-
-        button.innerHTML = `
-          <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          Error
-        `;
+        button.innerHTML = '<svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Error';
         button.classList.add("error");
         button.disabled = true;
-
-        setTimeout(() => {
-          button.innerHTML = originalHTMLError;
-          button.classList.remove("error");
-          button.disabled = false;
-        }, 1500);
+        setTimeout(() => { button.innerHTML = originalHTMLError; button.classList.remove("error"); button.disabled = false; }, 1500);
       });
     }
-
     async function fetchClientPublicIP() {
       try {
         const response = await fetch('/api/ip');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
         const data = await response.json();
         return data.ip;
       } catch (error) {
@@ -1474,141 +1348,101 @@ const HTML_TEMPLATE = `<!doctype html>
         return null;
       }
     }
-
     async function fetchScamalyticsClientInfo(clientIp) {
       if (!clientIp) return null;
       try {
-        const workerLookupUrl = `/scamalytics-lookup?ip=${encodeURIComponent(clientIp)}`;
+        const workerLookupUrl = '/scamalytics-lookup?ip=' + encodeURIComponent(clientIp);
         const response = await fetch(workerLookupUrl);
-
         if (!response.ok) {
-          let errorDetail = `Worker request failed! status: ${response.status}`;
+          let errorDetail = 'Worker request failed! status: ' + response.status;
           try {
             const errorData = await response.json();
-             if (errorData && errorData.error) {
-                errorDetail = errorData.error;
-                if(errorData.details) errorDetail += ` Details: ${errorData.details}`;
+            if (errorData && errorData.error) {
+              errorDetail = errorData.error;
+              if (errorData.details) errorDetail += ' Details: ' + errorData.details;
             } else if (errorData && errorData.scamalytics && errorData.scamalytics.error) {
-                 errorDetail = errorData.scamalytics.error;
+              errorDetail = errorData.scamalytics.error;
             } else if (response.statusText) {
-                errorDetail += ` - ${response.statusText}`;
+              errorDetail += ' - ' + response.statusText;
             }
           } catch (e) {
-            errorDetail += ` - ${await response.text()}`;
+            errorDetail += ' - ' + await response.text();
           }
           throw new Error(errorDetail);
         }
         const data = await response.json();
-        if (data.scamalytics && data.scamalytics.status === 'error') {
-            throw new Error(data.scamalytics.error || 'Scamalytics API error via Worker');
-        }
-        if (data.error && !data.scamalytics) {
-            throw new Error(data.error);
-        }
+        if (data.scamalytics && data.scamalytics.status === 'error') throw new Error(data.scamalytics.error || 'Scamalytics API error via Worker');
+        if (data.error && !data.scamalytics) throw new Error(data.error);
         return data;
       } catch (error) {
         console.error('Error fetching from Scamalytics via Worker:', error);
         return null;
       }
     }
-
     function updateScamalyticsClientDisplay(data) {
       const prefix = 'client';
       if (!data || !data.scamalytics || data.scamalytics.status !== 'ok') {
-        // Don't show error here, as geo data might come from the other source.
-        // Only update the risk score part.
-        const proxyElement = document.getElementById(`${prefix}-proxy`);
-        if(proxyElement) proxyElement.innerHTML = `<span class="badge badge-neutral">N/A</span>`;
+        const proxyElement = document.getElementById(prefix + '-proxy');
+        if(proxyElement) proxyElement.innerHTML = '<span class="badge badge-neutral">N/A</span>';
         return;
       }
-
       const sa = data.scamalytics;
-      const proxyElement = document.getElementById(`${prefix}-proxy`);
-
+      const proxyElement = document.getElementById(prefix + '-proxy');
       if (proxyElement) {
-        const score = sa.scamalytics_score;
-        const risk = sa.scamalytics_risk;
-        let riskText = "Unknown";
-        let badgeClass = "badge-neutral";
-
+        const score = sa.scamalytics_score, risk = sa.scamalytics_risk;
+        let riskText = "Unknown", badgeClass = "badge-neutral";
         if (risk !== undefined && score !== undefined && risk !== null && score !== null) {
-            riskText = `${score} - ${risk.charAt(0).toUpperCase() + risk.slice(1)}`;
-            switch (risk.toLowerCase()) {
-                case "low": badgeClass = "badge-yes"; break;
-                case "medium": badgeClass = "badge-warning"; break;
-                case "high": badgeClass = "badge-no"; break;
-                case "very high": badgeClass = "badge-no"; break;
-                default:
-                    badgeClass = "badge-neutral";
-                    riskText = `Score ${score} - ${risk || 'Status Unknown'}`;
-                    break;
-            }
+          riskText = score + ' - ' + (risk.charAt(0).toUpperCase() + risk.slice(1));
+          switch (risk.toLowerCase()) {
+            case "low": badgeClass = "badge-yes"; break;
+            case "medium": badgeClass = "badge-warning"; break;
+            case "high": case "very high": badgeClass = "badge-no"; break;
+            default: badgeClass = "badge-neutral"; riskText = 'Score ' + score + ' - ' + (risk || 'Status Unknown'); break;
+          }
         } else if (score !== undefined && score !== null) {
-            riskText = `Score ${score} - N/A`;
+          riskText = 'Score ' + score + ' - N/A';
         } else if (risk) {
-            riskText = risk.charAt(0).toUpperCase() + risk.slice(1);
-             switch (risk.toLowerCase()) {
-                case "low": badgeClass = "badge-yes"; break;
-                case "medium": badgeClass = "badge-warning"; break;
-                case "high": case "very high": badgeClass = "badge-no"; break;
-                default: badgeClass = "badge-neutral"; riskText="Status Unknown"; break;
-            }
+          riskText = risk.charAt(0).toUpperCase() + risk.slice(1);
+          switch (risk.toLowerCase()) {
+            case "low": badgeClass = "badge-yes"; break;
+            case "medium": badgeClass = "badge-warning"; break;
+            case "high": case "very high": badgeClass = "badge-no"; break;
+            default: badgeClass = "badge-neutral"; riskText = "Status Unknown"; break;
+          }
         }
-        proxyElement.innerHTML = `<span class="badge ${badgeClass}">${riskText}</span>`;
+        proxyElement.innerHTML = '<span class="badge ' + badgeClass + '">' + riskText + '</span>';
       }
     }
-
     function updateProxyDisplay(geo, prefix, originalHost) {
-      const hostElement = document.getElementById(`${prefix}-host`);
-      if (hostElement) {
-        hostElement.textContent = originalHost || "N/A";
-      }
-
-      const ipElement = document.getElementById(`${prefix}-ip`);
-      const locationElement = document.getElementById(`${prefix}-location`);
-      const ispElement = document.getElementById(`${prefix}-isp`);
-
+      const hostElement = document.getElementById(prefix + '-host');
+      if (hostElement) hostElement.textContent = originalHost || "N/A";
+      const ipElement = document.getElementById(prefix + '-ip'), locationElement = document.getElementById(prefix + '-location'), ispElement = document.getElementById(prefix + '-isp');
       if (!geo) {
         if (ipElement) ipElement.textContent = "N/A";
         if (locationElement) locationElement.innerHTML = "N/A";
         if (ispElement) ispElement.textContent = "N/A";
         return;
       }
-
       if (ipElement) ipElement.textContent = geo.ip || "N/A";
-
       if (locationElement) {
-        const city = geo.city || '';
-        const countryName = geo.country_name || '';
-        const countryCode = geo.country_code ? geo.country_code.toLowerCase() : '';
-        let flagElementHtml = '';
-
-        if (countryCode) {
-            flagElementHtml = `<img src="https://flagcdn.com/w20/${countryCode}.png" srcset="https://flagcdn.com/w40/${countryCode}.png 2x" alt="${geo.country_code || 'flag'}" class="country-flag"> `;
-        }
-
+        const city = geo.city || '', countryName = geo.country_name || '', countryCode = geo.country_code ? geo.country_code.toLowerCase() : '';
+        let flagElementHtml = countryCode ? '<img src="https://flagcdn.com/w20/' + countryCode + '.png" srcset="https://flagcdn.com/w40/' + countryCode + '.png 2x" alt="' + (geo.country_code || 'flag') + '" class="country-flag"> ' : '';
         let textPart = '';
-        if (city && countryName) textPart = `${city}, ${countryName}`;
+        if (city && countryName) textPart = city + ', ' + countryName;
         else if (countryName) textPart = countryName;
         else if (city) textPart = city;
-
         let locationText = 'N/A';
-        if (flagElementHtml.trim() || textPart.trim()) {
-            locationText = `${flagElementHtml}${textPart}`.trim();
-        }
+        if (flagElementHtml.trim() || textPart.trim()) locationText = (flagElementHtml + textPart).trim();
         locationElement.innerHTML = locationText || "N/A";
       }
-      if (ispElement) {
-        ispElement.textContent = geo.isp || 'N/A';
-      }
+      if (ispElement) ispElement.textContent = geo.isp || 'N/A';
     }
-
     async function fetchGeoIpInfo(ip) {
       try {
-        const response = await fetch(`/api/geoip/${ip}`);
+        const response = await fetch('/api/geoip/' + ip);
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+          const errorText = await response.text();
+          throw new Error('HTTP error! status: ' + response.status + ', message: ' + errorText);
         }
         return await response.json();
       } catch (error) {
@@ -1616,74 +1450,53 @@ const HTML_TEMPLATE = `<!doctype html>
         return null;
       }
     }
-
     function showError(prefix, message = "Could not load data", originalHostForProxy = null) {
       const errorMessage = "N/A";
       if (prefix === 'proxy') {
-        const hostElement = document.getElementById('proxy-host');
-        const ipElement = document.getElementById('proxy-ip');
-        const locationElement = document.getElementById('proxy-location');
-        const ispElement = document.getElementById('proxy-isp');
+        const hostElement = document.getElementById('proxy-host'), ipElement = document.getElementById('proxy-ip'), locationElement = document.getElementById('proxy-location'), ispElement = document.getElementById('proxy-isp');
         if (hostElement) hostElement.textContent = originalHostForProxy || errorMessage;
         if (ipElement) ipElement.textContent = errorMessage;
         if (locationElement) locationElement.innerHTML = errorMessage;
         if (ispElement) ispElement.textContent = errorMessage;
       } else if (prefix === 'client') {
-        const ipElement = document.getElementById('client-ip');
-        const locationElement = document.getElementById('client-location');
-        const ispElement = document.getElementById('client-isp');
-        const riskScoreElement = document.getElementById('client-proxy');
+        const ipElement = document.getElementById('client-ip'), locationElement = document.getElementById('client-location'), ispElement = document.getElementById('client-isp'), riskScoreElement = document.getElementById('client-proxy');
         if (ipElement) ipElement.textContent = errorMessage;
         if (locationElement) locationElement.innerHTML = errorMessage;
         if (ispElement) ispElement.textContent = errorMessage;
-        if (riskScoreElement) riskScoreElement.innerHTML = `<span class="badge badge-neutral">N/A</span>`;
+        if (riskScoreElement) riskScoreElement.innerHTML = '<span class="badge badge-neutral">N/A</span>';
       }
-      console.warn(`${prefix} data loading failed: ${message}`);
+      console.warn(prefix + ' data loading failed: ' + message);
     }
-
     async function loadNetworkInfo() {
-        // --- Load Client Info ---
         const clientIp = await fetchClientPublicIP();
         if (clientIp) {
             document.getElementById('client-ip').textContent = clientIp;
-
             const clientGeoData = await fetchGeoIpInfo(clientIp);
             if(clientGeoData) {
-                const clientLocationEl = document.getElementById('client-location');
-                const clientIspEl = document.getElementById('client-isp');
-
-                const city = clientGeoData.city || '';
-                const countryName = clientGeoData.country_name || '';
-                const countryCode = clientGeoData.country_code ? clientGeoData.country_code.toLowerCase() : '';
-                let flagHtml = countryCode ? `<img src="https://flagcdn.com/w20/${countryCode}.png" srcset="https://flagcdn.com/w40/${countryCode}.png 2x" alt="${clientGeoData.country_code}" class="country-flag"> ` : '';
-
+                const clientLocationEl = document.getElementById('client-location'), clientIspEl = document.getElementById('client-isp');
+                const city = clientGeoData.city || '', countryName = clientGeoData.country_name || '', countryCode = clientGeoData.country_code ? clientGeoData.country_code.toLowerCase() : '';
+                let flagHtml = countryCode ? '<img src="https://flagcdn.com/w20/' + countryCode + '.png" srcset="https://flagcdn.com/w40/' + countryCode + '.png 2x" alt="' + clientGeoData.country_code + '" class="country-flag"> ' : '';
                 let locationText = 'N/A';
-                if (city && countryName) locationText = `${city}, ${countryName}`;
+                if (city && countryName) locationText = city + ', ' + countryName;
                 else if (countryName) locationText = countryName;
                 else if (city) locationText = city;
-
-                clientLocationEl.innerHTML = `${flagHtml}${locationText}`.trim();
+                clientLocationEl.innerHTML = (flagHtml + locationText).trim();
                 clientIspEl.textContent = clientGeoData.isp || 'N/A';
             } else {
                 showError('client', 'Could not load client geo data.');
             }
-
             const scamalyticsData = await fetchScamalyticsClientInfo(clientIp);
             updateScamalyticsClientDisplay(scamalyticsData);
-
         } else {
             showError('client', 'Could not determine your IP address.');
         }
-
-        // --- Load Proxy Server Info ---
         const proxyDomainOrIp = document.body.getAttribute('data-proxy-ip');
         let resolvedProxyIp = proxyDomainOrIp;
         const proxyHostVal = (proxyDomainOrIp && proxyDomainOrIp.toLowerCase() !== "null" && proxyDomainOrIp.trim() !== "") ? proxyDomainOrIp : "N/A";
-
         if (proxyHostVal !== "N/A") {
             if (!/^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$/.test(proxyDomainOrIp)) {
                 try {
-                    const dnsRes = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(proxyDomainOrIp)}&type=A`);
+                    const dnsRes = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(proxyDomainOrIp) + '&type=A');
                     if (dnsRes.ok) {
                         const dnsData = await dnsRes.json();
                         if (dnsData.Answer && dnsData.Answer.length > 0) {
@@ -1691,36 +1504,28 @@ const HTML_TEMPLATE = `<!doctype html>
                             if (ipAnswer) resolvedProxyIp = ipAnswer.data;
                         }
                     }
-                } catch (e) {
-                    console.error('DNS resolution for proxy failed:', e);
-                }
+                } catch (e) { console.error('DNS resolution for proxy failed:', e); }
             }
-
             const proxyGeoData = await fetchGeoIpInfo(resolvedProxyIp);
             if (proxyGeoData) {
                 updateProxyDisplay(proxyGeoData, 'proxy', proxyHostVal);
             } else {
-                showError('proxy', `Could not load proxy geo data for ${resolvedProxyIp}.`, proxyHostVal);
+                showError('proxy', 'Could not load proxy geo data for ' + resolvedProxyIp + '.', proxyHostVal);
             }
         } else {
             showError('proxy', 'Proxy Host not available', "N/A");
         }
     }
-
-    // Refresh button functionality
     document.getElementById('refresh-ip-info')?.addEventListener('click', function() {
-      const button = this;
-      const icon = button.querySelector('.refresh-icon');
+      const button = this, icon = button.querySelector('.refresh-icon');
       button.disabled = true;
       if (icon) icon.style.animation = 'spin 1s linear infinite';
-
       const resetToSkeleton = (prefix) => {
         const elementsToReset = ['ip', 'location', 'isp'];
         if (prefix === 'proxy') elementsToReset.push('host');
         if (prefix === 'client') elementsToReset.push('proxy');
-
         elementsToReset.forEach(elemKey => {
-          const element = document.getElementById(`${prefix}-${elemKey}`);
+          const element = document.getElementById(prefix + '-' + elemKey);
           if (element) {
             let skeletonWidth = "100px";
             if (elemKey === 'isp') skeletonWidth = "130px";
@@ -1728,27 +1533,22 @@ const HTML_TEMPLATE = `<!doctype html>
             else if (elemKey === 'ip') skeletonWidth = "120px";
             else if (elemKey === 'host' && prefix === 'proxy') skeletonWidth = "150px";
             else if (elemKey === 'proxy' && prefix === 'client') skeletonWidth = "100px";
-            element.innerHTML = `<span class="skeleton" style="width: ${skeletonWidth};"></span>`;
+            element.innerHTML = '<span class="skeleton" style="width: ' + skeletonWidth + ';"></span>';
           }
         });
       };
-
       resetToSkeleton('proxy');
       resetToSkeleton('client');
-      loadNetworkInfo().finally(() => setTimeout(() => {
-        button.disabled = false; if (icon) icon.style.animation = '';
-      }, 1000));
+      loadNetworkInfo().finally(() => setTimeout(() => { button.disabled = false; if (icon) icon.style.animation = ''; }, 1000));
     });
-
     const style = document.createElement('style');
-    style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+    style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
     document.head.appendChild(style);
-
     document.addEventListener('DOMContentLoaded', () => {
       console.log('Page loaded, initializing network info...');
       loadNetworkInfo();
     });
-</script>
+  </script>
 </body>
 </html>
-`.replace(/\\/g, "\\\\").replace(/`/g, "\\`");
+`.replace(/[\\`]/g, '\\$&');
