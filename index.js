@@ -72,13 +72,13 @@ function generateRandomPath(length = 12, query = '') {
 }
 
 const CORE_PRESETS = {
-  /* Xray cores – Dream */
+  // --- Xray cores – Dream ---
   xray: {
     tls: { path: () => generateRandomPath(12, 'ed=2048'), security: 'tls',  fp: 'chrome',  alpn: 'http/1.1', extra: {} },
     tcp: { path: () => generateRandomPath(12, 'ed=2048'), security: 'none', fp: 'chrome',                extra: {} },
   },
 
-  /* Singbox cores – Freedom */
+  // ---Singbox cores – Freedom ---
   sb: {
     tls: { path: () => generateRandomPath(18), security: 'tls',  fp: 'firefox', alpn: 'h3', extra: CONST.ED_PARAMS },
     tcp: { path: () => generateRandomPath(18), security: 'none', fp: 'firefox',             extra: CONST.ED_PARAMS },
@@ -116,7 +116,7 @@ function buildLink({ core, proto, userID, hostName, address, port, tag }) {
     address,
     port,
     host: hostName,
-    path: p.path(), // Calling path() as a function to generate a new random path
+    path: p.path(),
     security: p.security,
     sni: p.security === 'tls' ? hostName : undefined,
     fp: p.fp,
@@ -145,12 +145,19 @@ async function handleIpSubscription(core, userID, hostName) {
   const httpPorts  = [ 80, 8080, 8880, 2052, 2082, 2086, 2095];
 
   let links = [];
+  
+  const isPagesDeployment = hostName.endsWith('.pages.dev');
 
   mainDomains.forEach((domain, i) => {
     links.push(
-      buildLink({ core, proto: 'tcp', userID, hostName, address: domain, port: pick(httpPorts),  tag: `D${i+1}` }),
-      buildLink({ core, proto: 'tls', userID, hostName, address: domain, port: pick(httpsPorts), tag: `D${i+1}` }),
+      buildLink({ core, proto: 'tls', userID, hostName, address: domain, port: pick(httpsPorts), tag: `D${i+1}` })
     );
+    
+    if (!isPagesDeployment) {
+      links.push(
+        buildLink({ core, proto: 'tcp', userID, hostName, address: domain, port: pick(httpPorts),  tag: `D${i+1}` })
+      );
+    }
   });
 
   try {
@@ -160,9 +167,14 @@ async function handleIpSubscription(core, userID, hostName) {
       const ips = [...(json.ipv4||[]), ...(json.ipv6||[])].slice(0, 20).map(x => x.ip);
       ips.forEach((ip, i) => {
         links.push(
-          buildLink({ core, proto: 'tcp', userID, hostName, address: ip, port: pick(httpPorts),  tag: `IP${i+1}` }),
-          buildLink({ core, proto: 'tls', userID, hostName, address: ip, port: pick(httpsPorts), tag: `IP${i+1}` }),
+          buildLink({ core, proto: 'tls', userID, hostName, address: ip, port: pick(httpsPorts), tag: `IP${i+1}` })
         );
+        
+        if (!isPagesDeployment) {
+          links.push(
+            buildLink({ core, proto: 'tcp', userID, hostName, address: ip, port: pick(httpPorts),  tag: `IP${i+1}` })
+          );
+        }
       });
     }
   } catch (e) { console.error('Fetch IP list failed', e); }
