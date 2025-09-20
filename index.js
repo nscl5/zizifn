@@ -1,7 +1,7 @@
 // @ts-ignore
 import { connect } from 'cloudflare:sockets';
 
-/*
+/**
  * To generate your own UUID: https://www.uuidgenerator.net
  * Proxy IP land: https://github.com/NiREvil/vless/blob/main/sub/ProxyIP.md
  * You don't need to change the acamalytics values for personal use, but if many forks are going to be created from you, it's better to request a personal API. 
@@ -85,6 +85,10 @@ const CORE_PRESETS = {
   },
 };
 
+/**
+ * @param {any} tag
+ * @param {string} proto
+ */
 function makeName(tag, proto) {
   return `${tag}-${proto.toUpperCase()}`;
 }
@@ -188,13 +192,23 @@ async function handleIpSubscription(core, userID, hostName, isPages) {
   });
 }
 
+
 export default {
   /**
    * @param {Request<any, CfProperties<any>>} request
-   * @param {{ PROXYIP: string; UUID: any; SCAMALYTICS_USERNAME: any; SCAMALYTICS_API_KEY: any; SCAMALYTICS_BASEURL: any; SOCKS5: any; SOCKS5_RELAY: string; }} env
-   * @param {any} ctx
+   * @param {{ 
+   *   PROXYIP: string; 
+   *   UUID: any; 
+   *   SCAMALYTICS_USERNAME: any; 
+   *   SCAMALYTICS_API_KEY: any; 
+   *   SCAMALYTICS_BASEURL: any; 
+   *   SOCKS5: any; 
+   *   SOCKS5_RELAY: string;
+   *   CF_PAGES?: string;
+   * }} env
+   * @param {any} _ctx
    */
-  async fetch(request, env, ctx) {
+  async fetch(request, env, _ctx) {
     const cfg = Config.fromEnv(env);
     const url = new URL(request.url);
     const hostName = url.hostname;
@@ -340,7 +354,6 @@ function generateBeautifulConfigPage(userID, hostName, proxyAddress) {
 }
 
 /**
- * Core vless protocol logic
  * Handles VLESS protocol over WebSocket.
  * @param {Request} request
  * @param {object} config
@@ -356,7 +369,7 @@ async function ProtocolOverWSHandler(request, config) {
   const log = (/** @type {string} */ info, /** @type {undefined} */ event) => {
     console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
   };
-  const earlyDataHeader = request.headers.get('Sec-WebSocket-Protocol') || '';
+  const earlyDataHeader = request.headers.get('sec-websocket-protocol') || '';
   const readableWebSocketStream = MakeReadableWebSocketStream(webSocket, earlyDataHeader, log);
   let remoteSocketWapper = { value: null };
   let isDns = false;
@@ -544,7 +557,7 @@ function MakeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
       if (error) controller.error(error);
       else if (earlyData) controller.enqueue(earlyData);
     },
-    pull(_controller) { },
+    pull(controller) { },
     cancel(reason) {
       log(`ReadableStream was canceled, due to ${reason}`);
       safeCloseWebSocket(webSocketServer);
@@ -698,7 +711,7 @@ function safeCloseWebSocket(socket) {
 
 const byteToHex = Array.from({ length: 256 }, (_, i) => (i + 0x100).toString(16).slice(1));
 
-/*
+/**
  * @param {Uint8Array | (string | number)[]} arr
  */
 function unsafeStringify(arr, offset = 0) {
@@ -726,7 +739,7 @@ function unsafeStringify(arr, offset = 0) {
   ).toLowerCase();
 }
 
-/*
+/**
  * @param {Uint8Array} arr
  */
 function stringify(arr, offset = 0) {
