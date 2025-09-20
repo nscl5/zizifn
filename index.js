@@ -132,8 +132,9 @@ const pick = (/** @type {string | any[]} */ arr) => arr[Math.floor(Math.random()
  * @param {string} core
  * @param {any} userID
  * @param {string} hostName
+ * @param {boolean} isPages
  */
-async function handleIpSubscription(core, userID, hostName) {
+async function handleIpSubscription(core, userID, hostName, isPages) {
   const mainDomains = [
     hostName, 'creativecommons.org', 'www.speedtest.net',
     'sky.rethinkdns.com', 'cfip.1323123.xyz', 'cfip.xxxxxxxx.tk',
@@ -145,14 +146,12 @@ async function handleIpSubscription(core, userID, hostName) {
   const httpPorts  = [ 80, 8080, 8880, 2052, 2082, 2086, 2095];
 
   let links = [];
-  
-  const isPagesDeployment = hostName.endsWith('.pages.dev');
-
+  const isPagesDeployment = isPages;
   mainDomains.forEach((domain, i) => {
     links.push(
       buildLink({ core, proto: 'tls', userID, hostName, address: domain, port: pick(httpsPorts), tag: `D${i+1}` })
     );
-    
+
     if (!isPagesDeployment) {
       links.push(
         buildLink({ core, proto: 'tcp', userID, hostName, address: domain, port: pick(httpPorts),  tag: `D${i+1}` })
@@ -166,13 +165,14 @@ async function handleIpSubscription(core, userID, hostName) {
       const json = await r.json();
       const ips = [...(json.ipv4||[]), ...(json.ipv6||[])].slice(0, 20).map(x => x.ip);
       ips.forEach((ip, i) => {
+		const formattedAddress = ip.includes(':') ? `[${ip}]` : ip;
         links.push(
           buildLink({ core, proto: 'tls', userID, hostName, address: ip, port: pick(httpsPorts), tag: `IP${i+1}` })
         );
         
         if (!isPagesDeployment) {
           links.push(
-            buildLink({ core, proto: 'tcp', userID, hostName, address: ip, port: pick(httpPorts),  tag: `IP${i+1}` })
+            buildLink({ core, proto: 'tcp', userID, hostName, address: formattedAddress, port: pick(httpPorts),  tag: `IP${i+1}` })
           );
         }
       });
@@ -193,6 +193,13 @@ export default {
   async fetch(request, env, ctx) {
     const cfg = Config.fromEnv(env);
     const url = new URL(request.url);
+    const hostName = url.hostname;
+    const userID = url.pathname.substring(1);
+    const core = url.searchParams.get('core') || 'vless';
+    const isPages = env.CF_PAGES === '1';
+    if (userID && !userID.startsWith('xray/') && !userID.startsWith('sb/') && userID === cfg.userID) {
+      return await handleIpSubscription(core, userID, hostName, isPages);
+    }
     
     const upgradeHeader = request.headers.get('Upgrade');
     if (upgradeHeader && upgradeHeader.toLowerCase() === 'websocket') {
@@ -215,13 +222,13 @@ export default {
       return handleScamalyticsLookup(request, cfg);
 
     if (url.pathname.startsWith(`/xray/${cfg.userID}`))
-      return handleIpSubscription('xray', cfg.userID, url.hostname);
+      return handleIpSubscription('xray', cfg.userID, hostName, isPages);
 
     if (url.pathname.startsWith(`/sb/${cfg.userID}`))
-      return handleIpSubscription('sb', cfg.userID, url.hostname);
+      return handleIpSubscription('sb', cfg.userID, hostName, isPages);
 
     if (url.pathname.startsWith(`/${cfg.userID}`))
-      return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress);
+      return handleConfigPage(cfg.userID, hostName, cfg.proxyAddress);
 
     return new Response('UUID not found. Please set the UUID environment variable in the Cloudflare dashboard.', { status: 404 });
   },
