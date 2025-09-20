@@ -146,12 +146,14 @@ async function handleIpSubscription(core, userID, hostName, isPages) {
   const httpPorts  = [ 80, 8080, 8880, 2052, 2082, 2086, 2095];
 
   let links = [];
+  
   const isPagesDeployment = isPages;
+
   mainDomains.forEach((domain, i) => {
     links.push(
       buildLink({ core, proto: 'tls', userID, hostName, address: domain, port: pick(httpsPorts), tag: `D${i+1}` })
     );
-
+    
     if (!isPagesDeployment) {
       links.push(
         buildLink({ core, proto: 'tcp', userID, hostName, address: domain, port: pick(httpPorts),  tag: `D${i+1}` })
@@ -164,10 +166,12 @@ async function handleIpSubscription(core, userID, hostName, isPages) {
     if (r.ok) {
       const json = await r.json();
       const ips = [...(json.ipv4||[]), ...(json.ipv6||[])].slice(0, 20).map(x => x.ip);
+      
       ips.forEach((ip, i) => {
-		const formattedAddress = ip.includes(':') ? `[${ip}]` : ip;
+        const formattedAddress = ip.includes(':') ? `[${ip}]` : ip;
+
         links.push(
-          buildLink({ core, proto: 'tls', userID, hostName, address: ip, port: pick(httpsPorts), tag: `IP${i+1}` })
+          buildLink({ core, proto: 'tls', userID, hostName, address: formattedAddress, port: pick(httpsPorts), tag: `IP${i+1}` })
         );
         
         if (!isPagesDeployment) {
