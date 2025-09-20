@@ -50,7 +50,7 @@ jobs:
       - name: Add mulìtiline version comment to _worker.js
         run: |
           if [ -s _worker.js ]; then
-            VERSION_BLOCK="// <!--GAMFC--> version base on commit ${{ github.sha }}, time is $(date -u '+%Y-%m-%d %H:%M:%S') UTC<!--We are all REvil-->\n // @ts-ignore"
+            VERSION_BLOCK="// <!--GAMFC--> version base on commit ${{ github.sha }}, time is $(date -u '+%Y-%m-%d %H:%M:%S') UTC<!--We are all REvil-->\n// @ts-ignore"
             {
               printf '%b\n\n' "$VERSION_BLOCK"
               cat _worker.js
