@@ -1,23 +1,30 @@
 import { connect } from 'cloudflare:sockets';
 
 /**
- * - Last updated: Thursday, 23 Oct 2025, 04:20 AM.
- * - UUID: To generate your own UUID, visit: https://www.uuidgenerator.net
- *   You can add multiple UUIDs by separating them with a comma (e.g., 'uuid1, uuid2').
- * 
- * - Proxy IP Land: A large, daily-updated repository of tested proxy IPs.
- *   Find the list here: https://github.com/NiREvil/vless/blob/main/sub/ProxyIP.md
- * 
- * - Scamalytics API: The default key is for public use. If you are creating a popular fork,
- *   it's recommended to get your own free API key from:
- *   https://scamalytics.com/ip/api/enquiry?monthly_api_calls=5000
+ * Last Update
+ *  - Friday, November 7, 2025 - 04:20 UTC.
+ *  - README: https://github.com/NiREvil/zizifn
+ *
+ * UUID
+ *  - Generate: https://www.uuidgenerator.net
+ *  - Add multiple: comma-separated (uuid1, uuid2) - Line 26.
+ *
+ * Proxy IP Land
+ *  - An array of proxy addresses. You can add multiple proxies to the list.
+ *    Example: ['proxy1.ir:8443', '1.1.1.1:443', 'proxy2.com:2053'], - Line 28. 
+ *  - Daily, tested proxy list:
+ *    https://github.com/NiREvil/vless/blob/main/sub/ProxyIP.md
+ *
+ * Scamalytics API
+ *  - Default key is public, Line 31, 32, 33.
+ *  - If you fork or expect heavy use, get your own free key:
+ *    https://scamalytics.com/ip/api/enquiry?monthly_api_calls=5000
+ *
  */
+
 const Config = {
-  // Can be a single UUID or multiple UUIDs separated by commas.
   userID: 'd342d11e-d424-4583-b36e-524ab1f0afa4',
 
-  // An array of proxy addresses. You can add multiple proxies to the list.
-  // Example: ['proxy1.ir:8443', '1.1.1.1:443', 'proxy2.com:2053']
   proxyIPs: ['nima.nscl.ir:443'],
   
   scamalytics: {
@@ -83,19 +90,23 @@ function generateRandomPath(length = 12, query = '') {
 }
 
 const CORE_PRESETS = {
-  // --- Xray cores – Dream ---
+  // Xray cores – Dream
   xray: {
-    tls: { path: () => generateRandomPath(12, 'ed=2048'), security: 'tls',  fp: 'chrome',  alpn: 'http/1.1', extra: {} },
-    tcp: { path: () => generateRandomPath(12, 'ed=2048'), security: 'none', fp: 'chrome',                extra: {} },
+    tls: { path: () => generateRandomPath(12, 'ed=2560'), security: 'tls',  fp: 'chrome',  alpn: 'h3,http/1.1,h2', extra: {} },
+    tcp: { path: () => generateRandomPath(12, 'ed=2560'), security: 'none', fp: 'chrome',                     extra: {} },
   },
 
-  // ---Singbox cores – Freedom ---
+  // Singbox cores – Freedom
   sb: {
-    tls: { path: () => generateRandomPath(18), security: 'tls',  fp: 'firefox', alpn: 'h3', extra: CONST.ED_PARAMS },
-    tcp: { path: () => generateRandomPath(18), security: 'none', fp: 'firefox',             extra: CONST.ED_PARAMS },
+    tls: { path: () => generateRandomPath(18), security: 'tls',  fp: 'chrome', alpn: 'h3,http/1.1', extra: CONST.ED_PARAMS },
+    tcp: { path: () => generateRandomPath(18), security: 'none', fp: 'chrome',                 extra: CONST.ED_PARAMS },
   },
 };
 
+/**
+ * @param {any} tag
+ * @param {string} proto
+ */
 function makeName(tag, proto) {
   return `${tag}-${proto.toUpperCase()}`;
 }
@@ -110,7 +121,13 @@ function createVlessLink({
     path,
   });
 
-  if (security) params.set('security', security);
+  if (security) {
+    params.set('security', security);
+    if (security === 'tls') {
+      params.set('allowInsecure', '1');
+    }
+  }
+  
   if (sni)      params.set('sni',      sni);
   if (fp)       params.set('fp',       fp);
   if (alpn)     params.set('alpn',     alpn);
@@ -119,6 +136,7 @@ function createVlessLink({
 
   return `vless://${userID}@${address}:${port}?${params.toString()}#${encodeURIComponent(name)}`;
 }
+
 
 function buildLink({ core, proto, userID, hostName, address, port, tag }) {
   const p = CORE_PRESETS[core][proto];
@@ -129,7 +147,7 @@ function buildLink({ core, proto, userID, hostName, address, port, tag }) {
     host: hostName,
     path: p.path(),
     security: p.security,
-    sni: p.security === 'tls' ? hostName : undefined,
+    sni: p.security === 'tls' ? randomizeCase(hostName) : undefined,
     fp: p.fp,
     alpn: p.alpn,
     extra: p.extra,
@@ -140,16 +158,29 @@ function buildLink({ core, proto, userID, hostName, address, port, tag }) {
 const pick = (/** @type {string | any[]} */ arr) => arr[Math.floor(Math.random() * arr.length)];
 
 /**
+ * @param {Request} request
  * @param {string} core
  * @param {any} userID
  * @param {string} hostName
  */
-async function handleIpSubscription(core, userID, hostName) {
+async function handleIpSubscription(request, core, userID, hostName) {
+
+  const url = new URL(request.url);
+  const subName = url.searchParams.get('name');
+  
+  // Cake Subscription usage details 
+  const CAKE_INFO = {
+      total_TB: 382, // Total total traffic (e.g. 1000 terabytes)
+      base_GB: 22000,    // A base usage that is always shown (e.g. 50 GB)
+      daily_growth_GB: 250, // The rate at which usage increases throughout the day (e.g. 250 GB)
+      expire_date: "2029-4-20" // Cake expiration date
+  };
+
   const mainDomains = [
     hostName, 'creativecommons.org', 'www.speedtest.net',
     'sky.rethinkdns.com', 'cfip.1323123.xyz', 'cfip.xxxxxxxx.tk',
-    'go.inmobi.com', 'singapore.com', 'www.visa.com',
-    'cf.090227.xyz', 'cdnjs.com', 'zula.ir',
+    'go.inmobi.com', 'singapore.com', 'www.visa.com', 'www.wto.org',
+    'cf.090227.xyz', 'cdnjs.com', 'zula.ir', 'csgo.com', 'fbi.gov',
   ];
 
   const httpsPorts = [443, 8443, 2053, 2083, 2087, 2096];
@@ -191,10 +222,41 @@ async function handleIpSubscription(core, userID, hostName) {
     }
   } catch (e) { console.error('Fetch IP list failed', e); }
 
+  // Creating cake information headers
+  const GB_in_bytes = 1024 * 1024 * 1024;
+  const TB_in_bytes = 1024 * GB_in_bytes;
+  
+  const total_bytes = CAKE_INFO.total_TB * TB_in_bytes;
+  const base_bytes = CAKE_INFO.base_GB * GB_in_bytes;
+
+  // Calculating "dynamic" consumption based on hours per day
+  const now = new Date();
+  const hours_passed = now.getHours() + (now.getMinutes() / 60);
+  const daily_growth_bytes = (hours_passed / 24) * (CAKE_INFO.daily_growth_GB * GB_in_bytes);
+
+  // Splitting usage between upload and download
+  const cake_download = base_bytes + (daily_growth_bytes / 2);
+  const cake_upload = base_bytes + (daily_growth_bytes / 2);
+
+  // Convert expiration date to Unix Timestamp
+  const expire_timestamp = Math.floor(new Date(CAKE_INFO.expire_date).getTime() / 1000);
+  const subInfo = `upload=${Math.round(cake_upload)}; download=${Math.round(cake_download)}; total=${total_bytes}; expire=${expire_timestamp}`;
+  
+  const headers = {
+    'Content-Type': 'text/plain;charset=utf-8',
+    'Profile-Update-Interval': '6',
+    'Subscription-Userinfo': subInfo
+  };
+
+  if (subName) {
+    headers['Profile-Title'] = subName;
+  }
+
   return new Response(btoa(links.join('\n')), {
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    headers: headers,
   });
 }
+
 
 export default {
   /**
@@ -226,11 +288,11 @@ export default {
     if (url.pathname === '/scamalytics-lookup')
       return handleScamalyticsLookup(request, cfg);
 
-    if (url.pathname.startsWith(`/xray/${cfg.userID}`))
-      return handleIpSubscription('xray', cfg.userID, url.hostname);
+     if (url.pathname.startsWith(`/xray/${cfg.userID}`))
+      return handleIpSubscription(request, 'xray', cfg.userID, url.hostname);
 
     if (url.pathname.startsWith(`/sb/${cfg.userID}`))
-      return handleIpSubscription('sb', cfg.userID, url.hostname);
+      return handleIpSubscription(request, 'sb', cfg.userID, url.hostname);
 
     if (url.pathname.startsWith(`/${cfg.userID}`))
       return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress);
@@ -307,15 +369,18 @@ function generateBeautifulConfigPage(userID, hostName, proxyAddress) {
     address: hostName, port: 443, tag: `${hostName}-Singbox`,
   });
   
+  const subName = "INDEX"; // اسم دلخواه شما
   const configs = { dream, freedom };
-  const subXrayUrl = `https://${hostName}/xray/${userID}`;
-  const subSbUrl   = `https://${hostName}/sb/${userID}`;
-  
+  const encodedSubName = encodeURIComponent(subName);
+
+  const subXrayUrl = `https://${hostName}/xray/${userID}?name=${encodedSubName}`;
+  const subSbUrl   = `https://${hostName}/sb/${userID}?name=${encodedSubName}`;
+
   const clientUrls = {
-    clashMeta: `clash://install-config?url=${encodeURIComponent(`https://revil-sub.pages.dev/sub/clash-meta?url=${subSbUrl}&remote_config=&udp=false&ss_uot=false&show_host=false&forced_ws0rtt=true`)}`,
+    clashMeta: `clash://install-config?url=${encodeURIComponent(`https://revil-sub.pages.dev/sub/clash-meta?url=${subSbUrl}&remote_config=&udp=false&ss_uot=false&show_host=false&forced_ws0rtt=true`)}&name=${encodedSubName}`,
     hiddify: `hiddify://install-config?url=${encodeURIComponent(subXrayUrl)}`,
-    v2rayng: `v2rayng://install-config?url=${encodeURIComponent(subXrayUrl)}`,
-    exclave: `sn://subscription?url=${encodeURIComponent(subSbUrl)}`,
+    v2rayng: `v2rayng://install-config?url=${encodeURIComponent(subXrayUrl)}#${encodedSubName}`,
+    exclave: `sn://subscription?url=${encodeURIComponent(subSbUrl)}&name=${encodedSubName}`,
   };
 
   let finalHTML = `
@@ -442,6 +507,20 @@ async function ProtocolOverWSHandler(request, config) {
 function isValidUUID(uuid) {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
+}
+
+/**
+ * Helper function to randomize uppercase and lowercase letters in a string
+ * @param {string} str Input string (like SNI)
+ * @returns {string} String with random characters
+ */
+function randomizeCase(str) {
+  let result = '';
+  for (let i = 0; i < str.length; i++) {
+      // 50% chance of making a big deal out of it.
+      result += Math.random() < 0.5 ? str[i].toUpperCase() : str[i].toLowerCase();
+  }
+  return result;
 }
 
 /**
@@ -1201,7 +1280,7 @@ function getPageHTML(configs, clientUrls) {
           </a>
           <a href="${clientUrls.exclave}" class="button client-btn">
             <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M20,8h-3V6c0-1.1-0.9-2-2-2H9C7.9,4,7,4.9,7,6v2H4C2.9,8,2,8.9,2,10v9c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2v-9 C22,8.9,21.1,8,20,8z M9,6h6v2H9V6z M20,19H4v-2h16V19z M20,15H4v-5h3v1c0,0.55,0.45,1,1,1h1.5c0.28,0,0.5-0.22,0.5-0.5v-0.5h4v0.5 c0,0.28,0.22,0.5,0.5,0.5H16c0.55,0,1-0.45,1-1v-1h3V15z" /><circle cx="8.5" cy="13.5" r="1" /><circle cx="15.5" cy="13.5" r="1" /><path d="M12,15.5c-0.55,0-1-0.45-1-1h2C13,15.05,12.55,15.5,12,15.5z" /></svg></span>
-            <span class="button-text">Import to Exclavex</span>
+            <span class="button-text">Import to Exclave</span>
           </a>
         </div>
       </div>
