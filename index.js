@@ -2,8 +2,8 @@ import { connect } from 'cloudflare:sockets';
 
 /**
  * Last Update
- *  - Friday, November 7, 2025 - 04:20 UTC.
- *  - README: https://github.com/NiREvil/zizifn
+ *  - Saturday, November 8, 2025, 04:20 UTC.
+ *    https://github.com/NiREvil/zizifn
  *
  * UUID
  *  - Generate: https://www.uuidgenerator.net
@@ -93,13 +93,13 @@ const CORE_PRESETS = {
   // Xray cores – Dream
   xray: {
     tls: { path: () => generateRandomPath(12, 'ed=2560'), security: 'tls',  fp: 'chrome',  alpn: 'h3,http/1.1,h2', extra: {} },
-    tcp: { path: () => generateRandomPath(12, 'ed=2560'), security: 'none', fp: 'chrome',                     extra: {} },
+    tcp: { path: () => generateRandomPath(12, 'ed=2560'), security: 'none', fp: 'chrome',                          extra: {} },
   },
 
   // Singbox cores – Freedom
   sb: {
     tls: { path: () => generateRandomPath(18), security: 'tls',  fp: 'chrome', alpn: 'h3,http/1.1', extra: CONST.ED_PARAMS },
-    tcp: { path: () => generateRandomPath(18), security: 'none', fp: 'chrome',                 extra: CONST.ED_PARAMS },
+    tcp: { path: () => generateRandomPath(18), security: 'none', fp: 'chrome',                      extra: CONST.ED_PARAMS },
   },
 };
 
@@ -128,9 +128,9 @@ function createVlessLink({
     }
   }
   
-  if (sni)      params.set('sni',      sni);
-  if (fp)       params.set('fp',       fp);
-  if (alpn)     params.set('alpn',     alpn);
+  if (sni)    params.set('sni',    sni);
+  if (fp)     params.set('fp',     fp);
+  if (alpn)   params.set('alpn',   alpn);
 
   for (const [k, v] of Object.entries(extra)) params.set(k, v);
 
@@ -229,16 +229,13 @@ async function handleIpSubscription(request, core, userID, hostName) {
   const total_bytes = CAKE_INFO.total_TB * TB_in_bytes;
   const base_bytes = CAKE_INFO.base_GB * GB_in_bytes;
 
-  // Calculating "dynamic" consumption based on hours per day
   const now = new Date();
   const hours_passed = now.getHours() + (now.getMinutes() / 60);
   const daily_growth_bytes = (hours_passed / 24) * (CAKE_INFO.daily_growth_GB * GB_in_bytes);
 
-  // Splitting usage between upload and download
   const cake_download = base_bytes + (daily_growth_bytes / 2);
   const cake_upload = base_bytes + (daily_growth_bytes / 2);
 
-  // Convert expiration date to Unix Timestamp
   const expire_timestamp = Math.floor(new Date(CAKE_INFO.expire_date).getTime() / 1000);
   const subInfo = `upload=${Math.round(cake_upload)}; download=${Math.round(cake_download)}; total=${total_bytes}; expire=${expire_timestamp}`;
   
@@ -369,7 +366,7 @@ function generateBeautifulConfigPage(userID, hostName, proxyAddress) {
     address: hostName, port: 443, tag: `${hostName}-Singbox`,
   });
   
-  const subName = "INDEX"; // اسم دلخواه شما
+  const subName = "INDEX";
   const configs = { dream, freedom };
   const encodedSubName = encodeURIComponent(subName);
 
@@ -778,8 +775,8 @@ function safeCloseWebSocket(socket) {
 
 const byteToHex = Array.from({ length: 256 }, (_, i) => (i + 0x100).toString(16).slice(1));
 
-/*
- * @param {Uint8Array | (string | number)[]} arr
+/**
+ * @param {(string | number)[]} arr
  */
 function unsafeStringify(arr, offset = 0) {
   return (
@@ -1109,34 +1106,44 @@ function getPageCSS() {
       .client-btn:hover .client-icon { transform: rotate(15deg) scale(1.1); }
       .client-btn .button-text { position: relative; z-index: 2; transition: letter-spacing 0.3s ease; }
       .client-btn:hover .button-text { letter-spacing: 0.5px; }
-	    .client-icon { width: 18px; height: 18px; border-radius: 6px; background-color: var(--background-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-	    .client-icon svg { width: 14px; height: 14px; fill: var(--accent-secondary); }
-	    .button.copied { background-color: var(--accent-secondary) !important; color: var(--background-tertiary) !important; }
-	    .button.error { background-color: #c74a3b !important; color: var(--text-accent) !important; }
-	    .footer { text-align: center; margin-top: 20px; padding-bottom: 40px; color: var(--text-secondary); font-size: 8px; }
-	    .footer p { margin-bottom: 0px; }
-	    ::-webkit-scrollbar { width: 8px; height: 8px; }
-	    ::-webkit-scrollbar-track { background: var(--background-primary); border-radius: 4px; }
-	    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; border: 2px solid var(--background-primary); }
-	    ::-webkit-scrollbar-thumb:hover { background: var(--border-color-hover); }
-	    * { scrollbar-width: thin; scrollbar-color: var(--border-color) var(--background-primary); }
-	    .ip-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
-	    .ip-info-section { background-color: var(--background-tertiary); border-radius: var(--border-radius); padding: 16px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 20px; }
-	    .ip-info-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-	    .ip-info-header svg { width: 20px; height: 20px; stroke: var(--accent-secondary); }
-	    .ip-info-header h3 { font-family: var(--serif); font-size: 18px; font-weight: 400; color: var(--accent-secondary); margin: 0; }
-	    .ip-info-content { display: flex; flex-direction: column; gap: 10px; }
-	    .ip-info-item { display: flex; flex-direction: column; gap: 2px; }
-	    .ip-info-item .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-	    .ip-info-item .value { font-size: 14px; color: var(--text-primary); word-break: break-all; line-height: 1.4; }
-	    .badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-	    .badge-yes { background-color: rgba(112, 181, 112, 0.15); color: var(--status-success); border: 1px solid rgba(112, 181, 112, 0.3); }
-	    .badge-no { background-color: rgba(224, 93, 68, 0.15); color: var(--status-error); border: 1px solid rgba(224, 93, 68, 0.3); }
-	    .badge-neutral { background-color: rgba(79, 144, 196, 0.15); color: var(--status-info); border: 1px solid rgba(79, 144, 196, 0.3); }
-	    .badge-warning { background-color: rgba(224, 188, 68, 0.15); color: var(--status-warning); border: 1px solid rgba(224, 188, 68, 0.3); }
-	    .skeleton { display: block; background: linear-gradient(90deg, var(--background-tertiary) 25%, var(--background-secondary) 50%, var(--background-tertiary) 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 4px; height: 16px; }
-	    @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-	    .country-flag { display: inline-block; width: 18px; height: auto; max-height: 14px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+      .client-icon { width: 18px; height: 18px; border-radius: 6px; background-color: var(--background-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .client-icon svg { width: 14px; height: 14px; fill: var(--accent-secondary); }
+      .button.copied { background-color: var(--accent-secondary) !important; color: var(--background-tertiary) !important; }
+      .button.error { background-color: #c74a3b !important; color: var(--text-accent) !important; }
+      .footer { text-align: center; margin-top: 20px; padding-bottom: 40px; color: var(--text-secondary); font-size: 8px; }
+      .footer p { margin-bottom: 0px; }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: var(--background-primary); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; border: 2px solid var(--background-primary); }
+      ::-webkit-scrollbar-thumb:hover { background: var(--border-color-hover); }
+      * { scrollbar-width: thin; scrollbar-color: var(--border-color) var(--background-primary); }
+      .ip-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
+      .ip-info-section { background-color: var(--background-tertiary); border-radius: var(--border-radius); padding: 16px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 20px; }
+      .ip-info-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+      .ip-info-header svg { width: 20px; height: 20px; stroke: var(--accent-secondary); }
+      .ip-info-header h3 { font-family: var(--serif); font-size: 18px; font-weight: 400; color: var(--accent-secondary); margin: 0; }
+      .ip-info-content { display: flex; flex-direction: column; gap: 10px; }
+      .ip-info-item { display: flex; flex-direction: column; gap: 2px; }
+      .ip-info-item .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+      .ip-info-item .value { font-size: 14px; color: var(--text-primary); word-break: break-all; line-height: 1.4; }
+      .badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+      .badge-yes { background-color: rgba(112, 181, 112, 0.15); color: var(--status-success); border: 1px solid rgba(112, 181, 112, 0.3); }
+      .badge-no { background-color: rgba(224, 93, 68, 0.15); color: var(--status-error); border: 1px solid rgba(224, 93, 68, 0.3); }
+      .badge-neutral { background-color: rgba(79, 144, 196, 0.15); color: var(--status-info); border: 1px solid rgba(79, 144, 196, 0.3); }
+      .badge-warning { background-color: rgba(224, 188, 68, 0.15); color: var(--status-warning); border: 1px solid rgba(224, 188, 68, 0.3); }
+      .skeleton { display: block; background: linear-gradient(90deg, var(--background-tertiary) 25%, var(--background-secondary) 50%, var(--background-tertiary) 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 4px; height: 16px; }
+      @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+      .country-flag { display: inline-block; width: 18px; height: auto; max-height: 14px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+      .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+      .modal-overlay.visible { opacity: 1; visibility: visible; }
+      .modal-overlay.visible { opacity: 1; visibility: visible; }
+      .modal-content { background: var(--background-secondary); padding: 24px; border-radius: var(--border-radius); border: 1px solid var(--border-color); width: 90%; max-width: 450px; text-align: center; box-shadow: 0 8px 30px var(--shadow-color-accent); transform: scale(0.95); transition: transform 0.3s ease; }
+      .modal-overlay.visible .modal-content { transform: scale(1); }
+      .modal-title { font-family: var(--serif); font-size: 1.5rem; color: var(--accent-secondary); margin-bottom: 16px; }
+      .modal-text { color: var(--text-primary); font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+      .modal-instruction { background: var(--background-tertiary); padding: 12px; border-radius: 6px; margin-bottom: 24px; font-size: 13px; line-height: 1.8; border: 1px solid var(--border-color); }
+      .modal-instruction code { background: var(--background-primary); color: var(--accent-primary); padding: 3px 6px; border-radius: 4px; font-family: var(--mono-serif); }
+      #hiddify-modal-continue { width: 100%;}
 	    @media (max-width: 768px) {
 	      body { padding: 20px; } .container { padding: 0 14px; width: min(100%, 768px); }
 	      .ip-info-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; }
@@ -1172,13 +1179,13 @@ function getPageCSS() {
           .ip-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
           .ip-info-header h3 { font-size: 13px; } .ip-info-header { gap: 4px; } .ip-info-content { gap: 4px; }
           .ip-info-header svg { width: 16px; height: 16px; } .ip-info-item .label { font-size: 8px; }
-		  .ip-info-item .value { font-size: 10px; } .badge { padding: 1px 4px; font-size: 9px; border-radius: 8px; }
+          .ip-info-item .value { font-size: 10px; } .badge { padding: 1px 4px; font-size: 9px; border-radius: 8px; }
           .config-card { padding: 8px; } .config-title { font-size: 13px; } .config-title .refresh-btn { font-size: 9px; }
           .config-content { padding: 8px; } .config-content pre { font-size: 8px; }
-		  .client-buttons { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+          .client-buttons { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
           .button { padding: 3px 6px; font-size: 10px; } .copy-buttons { font-size: 9px; } .footer { font-size: 7px; }
         }
-    
+
         @media (min-width: 360px) { .container { max-width: 95%; } }
         @media (min-width: 480px) { .container { max-width: 90%; } }
         @media (min-width: 640px) { .container { max-width: 600px; } }
@@ -1253,7 +1260,7 @@ function getPageHTML(configs, clientUrls) {
         </div>
         <div class="config-content"><pre id="xray-config">${configs.dream}</pre></div>
         <div class="client-buttons">
-          <a href="${clientUrls.hiddify}" class="button client-btn">
+          <a href="${clientUrls.hiddify}" id="hiddify-import-btn" class="button client-btn">
             <span class="client-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg></span>
             <span class="button-text">Import to Hiddify</span>
           </a>
@@ -1288,6 +1295,20 @@ function getPageHTML(configs, clientUrls) {
       <div class="footer">
         <p>© <span id="current-year">${new Date().getFullYear()}</span> REvil - All Rights Reserved</p>
         <p>Secure. Private. Fast.</p>
+      </div>
+    </div>
+
+    <div id="hiddify-dns-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <h3 class="modal-title">Important Note for Hiddify Users</h3>
+        <p class="modal-text">
+          For the configuration to work correctly, you need to change the <strong>Remote DNS</strong> setting in the Hiddify app.
+        </p>
+        <div class="modal-instruction">
+          Change from: <code>udp://1.1.1.1</code><br>
+          To: <code>https://8.8.8.8/dns-query</code>
+        </div>
+        <button id="hiddify-modal-continue" class="button client-btn">Continue to Hiddify</button>
       </div>
     </div>
   `;
@@ -1526,6 +1547,33 @@ function getPageScript() {
 
       document.addEventListener('DOMContentLoaded', () => {
         loadNetworkInfo();
+      
+        const hiddifyBtn = document.getElementById('hiddify-import-btn');
+        const modal = document.getElementById('hiddify-dns-modal');
+        const continueBtn = document.getElementById('hiddify-modal-continue');
+        
+        if (hiddifyBtn && modal && continueBtn) {
+          hiddifyBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+          });
+
+          continueBtn.addEventListener('click', function() {
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                window.location.href = hiddifyBtn.href;
+            }, 300);
+          });
+
+          modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+              modal.classList.remove('visible');
+              setTimeout(() => modal.style.display = 'none', 300);
+            }
+          });
+        }
       });
   `;
 }
