@@ -1,21 +1,21 @@
 import { connect } from 'cloudflare:sockets';
 
 /**
- * Last Update
- *  - Saturday, November 8, 2025, 04:20 UTC.
+ * LAST UPDATE
+ *  - Sat, November 8, 2025, 04:20 UTC.
  *    https://github.com/NiREvil/zizifn
  *
  * UUID
  *  - Generate: https://www.uuidgenerator.net
  *  - Add multiple: comma-separated (uuid1, uuid2) - Line 26.
  *
- * Proxy IP Land
+ * PROXY IP LAND
  *  - An array of proxy addresses. You can add multiple proxies to the list.
  *    Example: ['proxy1.ir:8443', '1.1.1.1:443', 'proxy2.com:2053'], - Line 28. 
  *  - Daily, tested proxy list:
  *    https://github.com/NiREvil/vless/blob/main/sub/ProxyIP.md
  *
- * Scamalytics API
+ * SCAMALYTICS API
  *  - Default key is public, Line 31, 32, 33.
  *  - If you fork or expect heavy use, get your own free key:
  *    https://scamalytics.com/ip/api/enquiry?monthly_api_calls=5000
@@ -26,7 +26,7 @@ const Config = {
   userID: 'd342d11e-d424-4583-b36e-524ab1f0afa4',
 
   proxyIPs: ['nima.nscl.ir:443'],
-  
+
   scamalytics: {
     username: 'revilseptember',
     apiKey: 'b2fc368184deb3d8ac914bd776b8215fe899dd8fef69fbaba77511acfbdeca0d',
@@ -92,14 +92,14 @@ function generateRandomPath(length = 12, query = '') {
 const CORE_PRESETS = {
   // Xray cores – Dream
   xray: {
-    tls: { path: () => generateRandomPath(12, 'ed=2560'), security: 'tls',  fp: 'chrome',  alpn: 'h3,http/1.1,h2', extra: {} },
-    tcp: { path: () => generateRandomPath(12, 'ed=2560'), security: 'none', fp: 'chrome',                          extra: {} },
+    tls: { path: () => generateRandomPath(12, 'ed=2560'), security: 'tls', fp: 'chrome', alpn: 'h3,http/1.1,h2', extra: {} },
+    tcp: { path: () => generateRandomPath(12, 'ed=2560'), security: 'none', fp: 'chrome', extra: {} },
   },
 
   // Singbox cores – Freedom
   sb: {
-    tls: { path: () => generateRandomPath(18), security: 'tls',  fp: 'chrome', alpn: 'h3,http/1.1', extra: CONST.ED_PARAMS },
-    tcp: { path: () => generateRandomPath(18), security: 'none', fp: 'chrome',                      extra: CONST.ED_PARAMS },
+    tls: { path: () => generateRandomPath(18), security: 'tls', fp: 'chrome', alpn: 'h3,http/1.1', extra: CONST.ED_PARAMS },
+    tcp: { path: () => generateRandomPath(18), security: 'none', fp: 'chrome', extra: CONST.ED_PARAMS },
   },
 };
 
@@ -127,10 +127,10 @@ function createVlessLink({
       params.set('allowInsecure', '1');
     }
   }
-  
-  if (sni)    params.set('sni',    sni);
-  if (fp)     params.set('fp',     fp);
-  if (alpn)   params.set('alpn',   alpn);
+
+  if (sni) params.set('sni', sni);
+  if (fp) params.set('fp', fp);
+  if (alpn) params.set('alpn', alpn);
 
   for (const [k, v] of Object.entries(extra)) params.set(k, v);
 
@@ -167,15 +167,20 @@ async function handleIpSubscription(request, core, userID, hostName) {
 
   const url = new URL(request.url);
   const subName = url.searchParams.get('name');
-  
-  // Cake Subscription usage details 
+
+  /**
+   * Cake Subscription usage details
+   * - These values create fake usage statistics for subscription clients
+   * - Customize these values to display desired traffic and expiry information
+   */
   const CAKE_INFO = {
-      total_TB: 382, // Total total traffic (e.g. 1000 terabytes)
-      base_GB: 22000,    // A base usage that is always shown (e.g. 50 GB)
-      daily_growth_GB: 250, // The rate at which usage increases throughout the day (e.g. 250 GB)
-      expire_date: "2029-4-20" // Cake expiration date
+    total_TB: 380, // Total traffic quota in Terabytes
+    base_GB: 42000, // Base usage that's always shown (in Gigabytes)
+    daily_growth_GB: 250, // Daily traffic growth (in Gigabytes) - simulates gradual usage
+    expire_date: "2028-4-20" // Subscription expiry date (YYYY-MM-DD)
   };
 
+  // Domains behind Cloudflare, fixed in the subscription links, you can add as many as you want..
   const mainDomains = [
     hostName, 'creativecommons.org', 'www.speedtest.net',
     'sky.rethinkdns.com', 'cfip.1323123.xyz', 'cfip.xxxxxxxx.tk',
@@ -183,8 +188,8 @@ async function handleIpSubscription(request, core, userID, hostName) {
     'cf.090227.xyz', 'cdnjs.com', 'zula.ir', 'csgo.com', 'fbi.gov',
   ];
 
-  const httpsPorts = [443, 8443, 2053, 2083, 2087, 2096];
-  const httpPorts  = [ 80, 8080, 8880, 2052, 2082, 2086, 2095];
+  const httpsPorts = [443, 8443, 2053, 2083, 2087, 2096]; // Standard cloudflare TLS/HTTPS ports.
+  const httpPorts = [80, 8080, 8880, 2052, 2082, 2086, 2095]; // Standard cloudflare TCP/HTTP ports.
 
   let links = [];
 
@@ -192,12 +197,12 @@ async function handleIpSubscription(request, core, userID, hostName) {
 
   mainDomains.forEach((domain, i) => {
     links.push(
-      buildLink({ core, proto: 'tls', userID, hostName, address: domain, port: pick(httpsPorts), tag: `D${i+1}` })
+      buildLink({ core, proto: 'tls', userID, hostName, address: domain, port: pick(httpsPorts), tag: `D${i + 1}` })
     );
 
     if (!isPagesDeployment) {
       links.push(
-        buildLink({ core, proto: 'tcp', userID, hostName, address: domain, port: pick(httpPorts),  tag: `D${i+1}` })
+        buildLink({ core, proto: 'tcp', userID, hostName, address: domain, port: pick(httpPorts), tag: `D${i + 1}` })
       );
     }
   });
@@ -206,16 +211,16 @@ async function handleIpSubscription(request, core, userID, hostName) {
     const r = await fetch('https://raw.githubusercontent.com/NiREvil/vless/refs/heads/main/Cloudflare-IPs.json');
     if (r.ok) {
       const json = await r.json();
-      const ips = [...(json.ipv4||[]), ...(json.ipv6||[])].slice(0, 20).map(x => x.ip);
+      const ips = [...(json.ipv4 || []), ...(json.ipv6 || [])].slice(0, 20).map(x => x.ip);
       ips.forEach((ip, i) => {
         const formattedAddress = ip.includes(':') ? `[${ip}]` : ip;
         links.push(
-          buildLink({ core, proto: 'tls', userID, hostName, address: formattedAddress, port: pick(httpsPorts), tag: `IP${i+1}` })
+          buildLink({ core, proto: 'tls', userID, hostName, address: formattedAddress, port: pick(httpsPorts), tag: `IP${i + 1}` })
         );
 
         if (!isPagesDeployment) {
           links.push(
-            buildLink({ core, proto: 'tcp', userID, hostName, address: formattedAddress, port: pick(httpPorts),  tag: `IP${i+1}` })
+            buildLink({ core, proto: 'tcp', userID, hostName, address: formattedAddress, port: pick(httpPorts), tag: `IP${i + 1}` })
           );
         }
       });
@@ -225,20 +230,23 @@ async function handleIpSubscription(request, core, userID, hostName) {
   // Creating cake information headers
   const GB_in_bytes = 1024 * 1024 * 1024;
   const TB_in_bytes = 1024 * GB_in_bytes;
-  
+
   const total_bytes = CAKE_INFO.total_TB * TB_in_bytes;
   const base_bytes = CAKE_INFO.base_GB * GB_in_bytes;
 
+  // Calculating "dynamic" consumption based on hours per day
   const now = new Date();
   const hours_passed = now.getHours() + (now.getMinutes() / 60);
   const daily_growth_bytes = (hours_passed / 24) * (CAKE_INFO.daily_growth_GB * GB_in_bytes);
 
+  // Splitting usage between upload and download
   const cake_download = base_bytes + (daily_growth_bytes / 2);
   const cake_upload = base_bytes + (daily_growth_bytes / 2);
 
+  // Convert expiration date to Unix Timestamp
   const expire_timestamp = Math.floor(new Date(CAKE_INFO.expire_date).getTime() / 1000);
   const subInfo = `upload=${Math.round(cake_upload)}; download=${Math.round(cake_download)}; total=${total_bytes}; expire=${expire_timestamp}`;
-  
+
   const headers = {
     'Content-Type': 'text/plain;charset=utf-8',
     'Profile-Update-Interval': '6',
@@ -264,7 +272,7 @@ export default {
   async fetch(request, env, ctx) {
     const cfg = Config.fromEnv(env);
     const url = new URL(request.url);
-    
+
     const upgradeHeader = request.headers.get('Upgrade');
     if (upgradeHeader && upgradeHeader.toLowerCase() === 'websocket') {
       const requestConfig = {
@@ -281,11 +289,11 @@ export default {
 
       return ProtocolOverWSHandler(request, requestConfig);
     }
-    
+
     if (url.pathname === '/scamalytics-lookup')
       return handleScamalyticsLookup(request, cfg);
 
-     if (url.pathname.startsWith(`/xray/${cfg.userID}`))
+    if (url.pathname.startsWith(`/xray/${cfg.userID}`))
       return handleIpSubscription(request, 'xray', cfg.userID, url.hostname);
 
     if (url.pathname.startsWith(`/sb/${cfg.userID}`))
@@ -362,16 +370,16 @@ function generateBeautifulConfigPage(userID, hostName, proxyAddress) {
   });
 
   const freedom = buildLink({
-    core: 'sb',   proto: 'tls', userID, hostName,
+    core: 'sb', proto: 'tls', userID, hostName,
     address: hostName, port: 443, tag: `${hostName}-Singbox`,
   });
-  
+
   const subName = "INDEX";
   const configs = { dream, freedom };
   const encodedSubName = encodeURIComponent(subName);
 
   const subXrayUrl = `https://${hostName}/xray/${userID}?name=${encodedSubName}`;
-  const subSbUrl   = `https://${hostName}/sb/${userID}?name=${encodedSubName}`;
+  const subSbUrl = `https://${hostName}/sb/${userID}?name=${encodedSubName}`;
 
   const clientUrls = {
     clashMeta: `clash://install-config?url=${encodeURIComponent(`https://revil-sub.pages.dev/sub/clash-meta?url=${subSbUrl}&remote_config=&udp=false&ss_uot=false&show_host=false&forced_ws0rtt=true`)}&name=${encodedSubName}`,
@@ -514,8 +522,8 @@ function isValidUUID(uuid) {
 function randomizeCase(str) {
   let result = '';
   for (let i = 0; i < str.length; i++) {
-      // 50% chance of making a big deal out of it.
-      result += Math.random() < 0.5 ? str[i].toUpperCase() : str[i].toLowerCase();
+    // 50% chance of making a big deal out of it.
+    result += Math.random() < 0.5 ? str[i].toUpperCase() : str[i].toLowerCase();
   }
   return result;
 }
@@ -775,8 +783,8 @@ function safeCloseWebSocket(socket) {
 
 const byteToHex = Array.from({ length: 256 }, (_, i) => (i + 0x100).toString(16).slice(1));
 
-/**
- * @param {(string | number)[]} arr
+/*
+ * @param {Uint8Array | (string | number)[]} arr
  */
 function unsafeStringify(arr, offset = 0) {
   return (
