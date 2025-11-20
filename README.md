@@ -6,7 +6,7 @@
 > 
 > **Running VLESS-WS-TLS/TCP inside Cloudflare Edge/Serverless runtime**  
 >  
-> Base on [Zizifn] and [Harmony]
+> Base on [zizifn] and [harmony]
 >
 > <br/>
 > 
@@ -169,7 +169,7 @@
  
 این روش ساده‌ترین روش برای مدیریت و بروزرسانی‌های آینده است. از طریق فورک زدن مخزن zizifn و اتصال اون به اکانت کلادفلر پیش میریم.
 
- ‏1. **فورک/کلون کردن پروژه:** ابتدا این مخزن ([Repository][zizifn]) رو با اکانت گیت‌هاب خود Fork کنید.
+ ‏1. **فورک/کلون کردن پروژه:** ابتدا این مخزن ([Repository][N-zizifn]) رو با اکانت گیت‌هاب خود Fork کنید.
  
 > [!NOTE]
 >
@@ -309,11 +309,12 @@
 <hr/><br/> 
 
 ## Credits
-Many thanks to [NiREvil] and [Zizifn]
+Many thanks to [NiREvil] and [zizifn]
 
 
-[Zizifn]: https://github.com/zizifn/edgetunnel
-[Harmony]: https://github.com/NiREvil/Harmony
+[zizifn]: https://github.com/zizifn/edgetunnel
+[N-zizifn]: https://github.com/NiREvil/zizifn
+[harmony]: https://github.com/NiREvil/Harmony
 [NiREvil]: https://github.com/NiREvil
 [login]: https://dash.cloudflare.com/login
 [signup]: https://dash.cloudflare.com/sign-up
