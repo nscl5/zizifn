@@ -28,8 +28,8 @@ const Config = {
   proxyIPs: ["nima.nscl.ir:443"],
 
   scamalytics: {
-    username: "revilseptember",
-    apiKey: "b2fc368184deb3d8ac914bd776b8215fe899dd8fef69fbaba77511acfbdeca0d",
+    username: "victoriacrossn",
+    apiKey: "ed89b4fef21aba43c15cdd15cff2138dd8d3bbde5aaaa4690ad8e94990448516",
     baseUrl: "https://api12.scamalytics.com/v3/",
   },
 
