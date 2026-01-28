@@ -8,6 +8,8 @@
 >  
 > Base on [zizifn] and [harmony]
 >
+> [![zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=plastic&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/NiREvil/zizifn)
+> 
 > <br/>
 > 
 > <br/>
@@ -56,7 +58,7 @@
 > **نکته مهم:**  
 > چند هفته‌ای هست که دامنه‌ی `pages.dev` داخل ایران فیلتر شده و دیگه نمی‌شه از کانفیگ‌های ساخته‌شده با این روش استفاده کرد، عملا بدرد نمی‌خوره.
 >
-> ولی دامنه‌ی `worker.dev` هم‌چنان مثل قبل عالیه و میشه راحت استفاده کرد، پس در ادامه مطلب؛ پیشنهاد می‌کنم روش اول و دوم رو پیش برید.
+> ولی دامنه‌ی `worker.dev` هم‌چنان عالیه، پس پیشنهاد می‌کنم روش اول و دوم رو برای ساخت وورکر پیش برید.
 >
 > <br/>
 
@@ -72,7 +74,7 @@
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/NiREvil/zizifn)
 
- ‏2. حالا تو صفحه‌ی باز شده اگر اکانت کلادفل گر به گیت‌هاب متصل بود که هیچ، اگر نبود از گزینه سطر اول یعنی Git account و سپس New git connection اکانت خودتون رو وصل کنید.
+ ‏2. حالا تو صفحه‌ی باز شده اگر اکانت کلادفلر به گیت‌هاب متصل بود که هیچ، اگر نبود اول از گزینه Git account و سپس New git connection اکانت خودتون رو بهش وصل کنید.
 
 > [!NOTE]
 >
@@ -95,7 +97,12 @@
 - افزون متغیر - Variables
   - [جدول متغیرها](#تنظیمات-و-متغیرها)
 
- ‏4. بعد از این‌که به اکانت گیت‌هاب خودتون وصل کردید، یه اسم واسه وورکر انتخاب کردید، و همچین یه UUID از سایت گرفته و تو متغییرها تعیین کردید؛ کلیک کنید روی گزینه Create and Deploy و چند ثانیه صبر کنید تموم شه.
+ ‏4. بعد از این‌که:  
+- به اکانت گیت‌هاب خودتون وصل شدید
+- یک اسم برای وورکر تعیین کردید
+- یک [UUID][uuid] از سایت گرفته و در متغییرها قرار دادید  
+
+وقتش رسیده که کلیک کنید روی گزینه Create and Deploy و چند ثانیه صبر کنید تموم شه.
 
 <br><br/>
 
@@ -215,7 +222,7 @@
 
 <br/> 
 
-| **نام متغیر** | **توضیحات** | **الزامی/اختیاری** | *مقدار پیش‌فرض** |
+| **نام متغیر** | **توضیحات** | **الزامی/اختیاری** | **مقدار پیش‌فرض** |
 | :----- | :----------------- | :-----: | --------------- |
 | UUID | آی‌دی منحصر به فرد شما. این متغیر برای امنیت ضروری است. | الزامی | برای ساخت، به [UUID Generator][uuid] مراجعه کنید |
 | PROXYIP | یک IP یا دامنه برای fronting. این آدرس به عنوان آی‌پی جایگزین موقع بازدید از وب‌سایت‌های پشت کلادفلر مانند speedtest و whoer استفاده می‌شود. از [مخزن پروکسی آی‌پی][proxyip] ما پیشنهادی یک مورد را انتخاب کنید. | اختیاری | مقدار پیش‌فرض: `nima.nscl.ir` ده‌ها پروکسی‌آی‌پی آمریکا از بهترین سرویس‌دهنده‌ها <br/> می‌تونید از پروکسی‌آی‌پی‌های ترکیه در پشت این دامنه هم استفاده کنید: `turk.radicalization.ir` |
