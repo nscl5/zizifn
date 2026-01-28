@@ -2,7 +2,7 @@ import { connect } from "cloudflare:sockets";
 
 /**
  * LAST UPDATE
- *  - Wed, 19 November 2025, 04:20 UTC.
+ *  - Wed, 28 January 2026, 04:20 UTC.
  *    https://github.com/NiREvil/zizifn
  *
  * UUID
@@ -23,13 +23,13 @@ import { connect } from "cloudflare:sockets";
  */
 
 const Config = {
-  userID: "d342d11e-d424-4583-b36e-524ab1f0afa4",
+  userID: "be0ff9df-1468-41a0-8865-796d1c6800db",
 
   proxyIPs: ["nima.nscl.ir:443"],
 
   scamalytics: {
-    username: "victoriacrossn",
-    apiKey: "ed89b4fef21aba43c15cdd15cff2138dd8d3bbde5aaaa4690ad8e94990448516",
+    username: "revilseptember",
+    apiKey: "b2fc368184deb3d8ac914bd776b8215fe899dd8fef69fbaba77511acfbdeca0d",
     baseUrl: "https://api12.scamalytics.com/v3/",
   },
 
@@ -80,7 +80,7 @@ const CONST = {
  * @param {string} [query] - Optional query string to append (e.g., 'ed=2048').
  * @returns {string} The generated path.
  */
-function generateRandomPath(length = 12, query = "") {
+function generateRandomPath(length = 28, query = "") {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
@@ -93,14 +93,14 @@ const CORE_PRESETS = {
   // Xray cores – Dream
   xray: {
     tls: {
-      path: () => generateRandomPath(12, "ed=2560"),
+      path: () => generateRandomPath(22, "ed=2560"),
       security: "tls",
       fp: "chrome",
       alpn: "http/1.1",
       extra: {},
     },
     tcp: {
-      path: () => generateRandomPath(12, "ed=2560"),
+      path: () => generateRandomPath(22, "ed=2560"),
       security: "none",
       fp: "chrome",
       extra: {},
@@ -110,14 +110,14 @@ const CORE_PRESETS = {
   // Singbox cores – Freedom
   sb: {
     tls: {
-      path: () => generateRandomPath(18),
+      path: () => generateRandomPath(16),
       security: "tls",
       fp: "chrome",
       alpn: "http/1.1",
       extra: CONST.ED_PARAMS,
     },
     tcp: {
-      path: () => generateRandomPath(18),
+      path: () => generateRandomPath(16),
       security: "none",
       fp: "chrome",
       extra: CONST.ED_PARAMS,
@@ -213,19 +213,34 @@ async function handleIpSubscription(request, core, userID, hostName) {
   const mainDomains = [
     hostName,
     "creativecommons.org",
+    "2027.victoriacross.ir",
     "www.speedtest.net",
     "sky.rethinkdns.com",
-    "cfip.1323123.xyz",
+    "chat.openai.com",
     "cfip.xxxxxxxx.tk",
     "go.inmobi.com",
     "singapore.com",
     "www.visa.com",
     "www.wto.org",
-    "cf.090227.xyz",
-    "cdnjs.com",
-    "zula.ir",
+    "chatgpt.com",
+    "yakamoz.nscl.ir",
+    "nodejs.org",
+    "zzula.ir",
     "csgo.com",
     "fbi.gov",
+    "104.18.123.21",
+    "138.124.107.35",
+    "188.114.97.3",
+    "188.114.96.3",
+    "104.21.0.227",
+    "104.21.40.34",
+    "205.233.181.254",
+    "172.64.152.23",
+    "172.67.142.152",
+    "172.67.201.77",
+    "205.233.181.229",
+    "205.233.181.241",
+    "205.233.181.254",
   ];
 
   const httpsPorts = [443, 8443, 2053, 2083, 2087, 2096]; // Standard cloudflare TLS/HTTPS ports.
