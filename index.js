@@ -2,7 +2,7 @@ import { connect } from "cloudflare:sockets";
 
 /**
  * LAST UPDATE
- *  - Wed, 28 January 2026, 04:20 UTC.
+ *  - Sat, 21 February 2026, 04:20 UTC.
  *    https://github.com/NiREvil/zizifn
  *
  * UUID
@@ -80,7 +80,7 @@ const CONST = {
  * @param {string} [query] - Optional query string to append (e.g., 'ed=2048').
  * @returns {string} The generated path.
  */
-function generateRandomPath(length = 28, query = "") {
+function generateRandomPath(length = 18, query = "") {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
@@ -93,14 +93,14 @@ const CORE_PRESETS = {
   // Xray cores – Dream
   xray: {
     tls: {
-      path: () => generateRandomPath(22, "ed=2560"),
+      path: () => generateRandomPath(12, "ed=2560"),
       security: "tls",
       fp: "chrome",
       alpn: "http/1.1",
       extra: {},
     },
     tcp: {
-      path: () => generateRandomPath(22, "ed=2560"),
+      path: () => generateRandomPath(12, "ed=2560"),
       security: "none",
       fp: "chrome",
       extra: {},
@@ -110,14 +110,14 @@ const CORE_PRESETS = {
   // Singbox cores – Freedom
   sb: {
     tls: {
-      path: () => generateRandomPath(16),
+      path: () => generateRandomPath(18),
       security: "tls",
       fp: "chrome",
       alpn: "http/1.1",
       extra: CONST.ED_PARAMS,
     },
     tcp: {
-      path: () => generateRandomPath(16),
+      path: () => generateRandomPath(18),
       security: "none",
       fp: "chrome",
       extra: CONST.ED_PARAMS,
@@ -228,19 +228,6 @@ async function handleIpSubscription(request, core, userID, hostName) {
     "zzula.ir",
     "csgo.com",
     "fbi.gov",
-    "104.18.123.21",
-    "138.124.107.35",
-    "188.114.97.3",
-    "188.114.96.3",
-    "104.21.0.227",
-    "104.21.40.34",
-    "205.233.181.254",
-    "172.64.152.23",
-    "172.67.142.152",
-    "172.67.201.77",
-    "205.233.181.229",
-    "205.233.181.241",
-    "205.233.181.254",
   ];
 
   const httpsPorts = [443, 8443, 2053, 2083, 2087, 2096]; // Standard cloudflare TLS/HTTPS ports.
