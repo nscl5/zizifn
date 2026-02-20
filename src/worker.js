@@ -2,7 +2,7 @@ import { connect } from "cloudflare:sockets";
 
 /**
  * LAST UPDATE
- *  - Wed, 21 February 2026, 04:20 UTC.
+ *  - Sat, 21 February 2026, 04:20 UTC.
  *    https://github.com/NiREvil/zizifn
  *
  * UUID
@@ -80,7 +80,7 @@ const CONST = {
  * @param {string} [query] - Optional query string to append (e.g., 'ed=2048').
  * @returns {string} The generated path.
  */
-function generateRandomPath(length = 12, query = "") {
+function generateRandomPath(length = 18, query = "") {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
@@ -93,7 +93,7 @@ const CORE_PRESETS = {
   // Xray cores – Dream
   xray: {
     tls: {
-      path: () => generateRandomPath(22, "ed=2560"),
+      path: () => generateRandomPath(12, "ed=2560"),
       security: "tls",
       fp: "chrome",
       alpn: "http/1.1",
@@ -214,16 +214,16 @@ async function handleIpSubscription(request, core, userID, hostName) {
     hostName,
     "creativecommons.org",
     "2027.victoriacross.ir",
-    "www.speedtest.net",
     "sky.rethinkdns.com",
-    "chat.openai.com",
+    "www.speedtest.net",
     "cfip.xxxxxxxx.tk",
+    "yakamoz.nscl.ir",
+    "chat.openai.com",
     "go.inmobi.com",
     "singapore.com",
     "www.visa.com",
     "www.wto.org",
     "chatgpt.com",
-    "yakamoz.nscl.ir",
     "nodejs.org",
     "zzula.ir",
     "csgo.com",
