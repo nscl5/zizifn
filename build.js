@@ -12,7 +12,7 @@ async function runBuild() {
   const htmlPath = join(__dirname, 'src/index.html');
   let htmlContent = readFileSync(htmlPath, 'utf8');
 
-  htmlContent = htmlContent.replace(/\s{2,}/g, ' ').replace/>\s+</g, '><').trim();
+  htmlContent = htmlContent.replace(/\s{2,}/g, ' ').replace(/>\s+</g, '><').trim();
 
   const result = await build({
     entryPoints: [join(__dirname, 'src/worker.js')],
