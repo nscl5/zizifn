@@ -1,0 +1,47 @@
+name: Build and Compile Worker
+
+on:
+  push:
+    branches: [crisis]
+    paths:
+      - 'src/**'
+      - 'build.js'
+      - 'package.json'
+  pull_request:
+    branches: [crisis]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build_and_version:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Custom Build Script
+        run: npm run build
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.name "NET-Sentinel Bot"
+          git config --local user.email "224584266+NetSentinel-Bot@users.noreply.github.com"
+          git add dist/worker.js
+          cp dist/worker.js _worker.js
+          git add _worker.js
+
+          git commit -m "build: compile worker and UI [skip ci]" -m "Based on commit ${{ github.sha }}" || echo "No changes to commit."
+          git push origin ${{ github.ref }}
