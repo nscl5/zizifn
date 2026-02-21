@@ -33,8 +33,8 @@ const Config = {
   userID: "be0ff9df-1468-41a0-8865-796d1c6800db",
   proxyIPs: ["nima.nscl.ir:443"],
   scamalytics: {
-    username: "revilseptember",
-    apiKey: "b2fc368184deb3d8ac914bd776b8215fe899dd8fef69fbaba77511acfbdeca0d",
+    username: "nimasecure999",
+    apiKey: "ce75d58f98849753077a270e6013a036d6f4a6c562fd74c960960ae7a7087b40",
     baseUrl: "https://api12.scamalytics.com/v3/",
   },
   socks5: {
@@ -114,7 +114,7 @@ const CORE_PRESETS = {
   // Xray cores – Dream
   xray: {
     tls: {
-      path: () => generateRandomPath(12, "ed=2560"),
+      path: () => generateRandomPath(12, "ed=2048"),
       security: "tls",
       fp: "chrome",
       alpn: "http/1.1",
