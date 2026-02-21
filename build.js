@@ -9,11 +9,6 @@ const __dirname = dirname(__filename);
 async function runBuild() {
   console.log("🐾 Starting build process...");
 
-  const htmlPath = join(__dirname, 'src/index.html');
-  let htmlContent = readFileSync(htmlPath, 'utf8');
-
-  htmlContent = htmlContent.replace(/\s{2,}/g, ' ').replace(/>\s+</g, '><').trim();
-
   const result = await build({
     entryPoints: [join(__dirname, 'src/worker.js')],
     bundle: true,
@@ -21,10 +16,7 @@ async function runBuild() {
     target: 'esnext',
     external: ['cloudflare:sockets'],
     minify: true,
-    write: false,
-    define: {
-      '__UI_HTML__': JSON.stringify(htmlContent), 
-    }
+    write: false
   });
 
   mkdirSync(join(__dirname, 'dist'), { recursive: true });
