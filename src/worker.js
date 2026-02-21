@@ -341,6 +341,48 @@ async function handleIpSubscription(request, core, userID, hostName) {
 }
 
 /**
+ * Performs Scamalytics IP lookup using API.
+ * @param {Request} request
+ * @param {object} config
+ * @returns {Promise<Response>}
+ */
+async function handleScamalyticsLookup(request, config) {
+  const url = new URL(request.url);
+  const ipToLookup = url.searchParams.get("ip");
+  if (!ipToLookup) {
+    return new Response(JSON.stringify({ error: "Missing IP parameter" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const { username, apiKey, baseUrl } = config.scamalytics;
+  if (!username || !apiKey) {
+    return new Response(JSON.stringify({ error: "Scamalytics API credentials not configured." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const scamalyticsUrl = `${baseUrl}${username}/?key=${apiKey}&ip=${ipToLookup}`;
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+  });
+
+  try {
+    const scamalyticsResponse = await fetch(scamalyticsUrl);
+    const responseBody = await scamalyticsResponse.json();
+    return new Response(JSON.stringify(responseBody), { headers });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.toString() }), {
+      status: 500,
+      headers,
+    });
+  }
+}
+
+/**
  * Core vless protocol logic
  * Handles VLESS protocol over WebSocket.
  * @param {Request} request
@@ -967,80 +1009,46 @@ export default {
    * @param {any} ctx
    */
   async fetch(request, env, ctx) {
-    const cfg = Config.fromEnv(env);
-    const url = new URL(request.url);
+    try {
+      const cfg = Config.fromEnv(env);
+      const url = new URL(request.url);
 
-    const upgradeHeader = request.headers.get("Upgrade");
-    if (upgradeHeader && upgradeHeader.toLowerCase() === "websocket") {
-      const requestConfig = {
-        userID: cfg.userID,
-        proxyIP: cfg.proxyIP,
-        proxyPort: cfg.proxyPort,
-        socks5Address: cfg.socks5.address,
-        socks5Relay: cfg.socks5.relayMode,
-        enableSocks: cfg.socks5.enabled,
-        parsedSocks5Address: cfg.socks5.enabled ? socks5AddressParser(cfg.socks5.address) : {},
-      };
+      const upgradeHeader = request.headers.get("Upgrade");
+      if (upgradeHeader && upgradeHeader.toLowerCase() === "websocket") {
+        const requestConfig = {
+          userID: cfg.userID,
+          proxyIP: cfg.proxyIP,
+          proxyPort: cfg.proxyPort,
+          socks5Address: cfg.socks5.address,
+          socks5Relay: cfg.socks5.relayMode,
+          enableSocks: cfg.socks5.enabled,
+          parsedSocks5Address: cfg.socks5.enabled ? socks5AddressParser(cfg.socks5.address) : {},
+        };
 
-      return ProtocolOverWSHandler(request, requestConfig);
+        return ProtocolOverWSHandler(request, requestConfig);
+      }
+
+      if (url.pathname === "/scamalytics-lookup") return handleScamalyticsLookup(request, cfg);
+
+      if (url.pathname.startsWith(`/xray/${cfg.userID}`))
+        return handleIpSubscription(request, "xray", cfg.userID, url.hostname);
+
+      if (url.pathname.startsWith(`/sb/${cfg.userID}`))
+        return handleIpSubscription(request, "sb", cfg.userID, url.hostname);
+
+      if (url.pathname.startsWith(`/${cfg.userID}`))
+        return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress);
+
+      return new Response(
+        "UUID not found. Please set the UUID environment variable in the Cloudflare dashboard.",
+        { status: 404 },
+      );
+      
+    } catch (err) {
+      return new Response(`Error: ${err.message}\nStack: ${err.stack}`, { 
+        status: 500,
+        headers: { "Content-Type": "text/plain" }
+      });
     }
-
-    if (url.pathname === "/scamalytics-lookup") return handleScamalyticsLookup(request, cfg);
-
-    if (url.pathname.startsWith(`/xray/${cfg.userID}`))
-      return handleIpSubscription(request, "xray", cfg.userID, url.hostname);
-
-    if (url.pathname.startsWith(`/sb/${cfg.userID}`))
-      return handleIpSubscription(request, "sb", cfg.userID, url.hostname);
-
-    if (url.pathname.startsWith(`/${cfg.userID}`))
-      return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress);
-
-    return new Response(
-      "UUID not found. Please set the UUID environment variable in the Cloudflare dashboard.",
-      { status: 404 },
-    );
   },
 };
-
-/**
- * Performs Scamalytics IP lookup using API.
- * @param {Request} request
- * @param {object} config
- * @returns {Promise<Response>}
- */
-async function handleScamalyticsLookup(request, config) {
-  const url = new URL(request.url);
-  const ipToLookup = url.searchParams.get("ip");
-  if (!ipToLookup) {
-    return new Response(JSON.stringify({ error: "Missing IP parameter" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const { username, apiKey, baseUrl } = config.scamalytics;
-  if (!username || !apiKey) {
-    return new Response(JSON.stringify({ error: "Scamalytics API credentials not configured." }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const scamalyticsUrl = `${baseUrl}${username}/?key=${apiKey}&ip=${ipToLookup}`;
-  const headers = new Headers({
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-  });
-
-  try {
-    const scamalyticsResponse = await fetch(scamalyticsUrl);
-    const responseBody = await scamalyticsResponse.json();
-    return new Response(JSON.stringify(responseBody), { headers });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.toString() }), {
-      status: 500,
-      headers,
-    });
-  }
-}
