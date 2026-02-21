@@ -23,7 +23,7 @@ async function runBuild() {
     minify: true,
     write: false,
     define: {
-      __UI_HTML__: JSON.stringify(htmlContent), 
+      '__UI_HTML__': JSON.stringify(htmlContent), 
     }
   });
 
