@@ -10,7 +10,7 @@ async function runBuild() {
   console.log("🐾 Starting build process...");
 
   const result = await build({
-    entryPoints: [join(__dirname, 'src/worker.js')],
+    entryPoints: [join(__dirname, './index.js')],
     bundle: true,
     format: 'esm',
     target: 'esnext',
