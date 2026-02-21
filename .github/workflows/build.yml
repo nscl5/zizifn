@@ -2,14 +2,13 @@ name: Build and Compile Worker
 
 on:
   push:
-    branches: [requiem]
+    branches: [main]
     paths:
-      - 'src/**'
       - '**/index.**'
       - 'build.js'
       - 'package.json'
   pull_request:
-    branches: [requiem]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
