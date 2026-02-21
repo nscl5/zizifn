@@ -465,7 +465,7 @@
 
     <div class="footer">
       <p>
-        © <span id="current-year">${new Date().getFullYear()}</span> REvil - All Rights Reserved
+        © <span id="current-year"></span> REvil - All Rights Reserved
       </p>
       <p>Secure. Private. Fast.</p>
     </div>
@@ -806,6 +806,9 @@
       document.head.appendChild(style);
 
       document.addEventListener("DOMContentLoaded", () => {
+        const yearEl = document.getElementById("current-year");
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+      
         loadNetworkInfo();
 
         const hiddifyBtn = document.getElementById("hiddify-import-btn");
