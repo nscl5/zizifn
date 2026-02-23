@@ -16,7 +16,7 @@ const USER_SETTINGS = {
       name: "| HAЯMOИY ᵀᴸˢ |",
       host: "index.harmonica01.workers.dev",
       sni: "index.harmonica01.workers.dev",
-      path: "/random:22", // Path with 16 random characters
+      path: "/random:16", // Path with 16 random characters
       tls: true,
       allowInsecure: true,
       ports: ["443", "8443", "2053", "2083", "2087", "2096"], // Standard cloudflare TLS ports
@@ -30,7 +30,7 @@ const USER_SETTINGS = {
       name: "| HAЯMOИY ᵀᶜᴾ |",
       host: "index.harmonica02.workers.dev",
       sni: "", // Must be empty for non-TLS
-      path: "/random:22",
+      path: "/random:16",
       tls: false,
       allowInsecure: false,
       ports: ["80", "8080", "8880", "2052", "2082", "2086", "2095"], // Standard cloudflare HTTP ports
@@ -44,7 +44,7 @@ const USER_SETTINGS = {
       name: "| HAЯMOИY ᴱᴹˢ |",
       host: "index.harmony715.workers.dev",
       sni: "index.harmony715.workers.dev",
-      path: "/random:18?ed=2048", // Fixed path value optimized for xray core
+      path: "/random:14?ed=2048", // Fixed path value optimized for xray core
       tls: true,
       allowInsecure: true,
       ports: ["443", "8443", "2053"],
@@ -684,6 +684,7 @@ const staticIPs = [
   'go.inmobi.com',
   'cf.090227.xyz',
   'www.visa.com',
+  'chatgpt.com',
   'www.wto.org',
   'lb.nscl.ir',
   'cdnjs.com',
@@ -692,21 +693,6 @@ const staticIPs = [
   'fbi.gov',
   'time.is',
   'icook.hk',
-  'creativecommons.org',
-  '2027.victoriacross.ir',
-  'sky.rethinkdns.com',
-  'www.speedtest.net',
-  'cfip.1323123.xyz',
-  'chat.openai.com',
-  'cfip.xxxxxxxx.tk',
-  'go.inmobi.com',
-  'singapore.com',
-  'www.visa.com',
-  'www.wto.org',
-  'chatgpt.com',
-  'nodejs.org',
-  'cdnjs.com',
-  'csgo.com',
   'zzula.ir',
   '104.16.13.40',
   '104.16.53.11',
