@@ -1,3 +1,31 @@
+/**
+ * Harmony - VLESS Subscription Generator for Cloudflare Workers
+ * - Last Update: Tue, December 25, 2025, 04:20 UTC
+ * - https://github.com/NiREvil/Harmony
+ * 
+ * This worker builds a V2Ray subscription link with the ability to automatically add 
+ * Cloudflare clean IPs to your VLESS configurations.
+ * 
+ * HOW IT WORKS:
+ * 1. Create one VLESS config using any method/tool you prefer
+ * 2. Extract the UUID and hostname from your config
+ * 3. Replace the values in USER_SETTINGS object:
+ *    - UUID in line 32
+ *    - Hostname in each group's "host" parameter (lines 55, 69, 83)
+ *    - SNI in each group's "sni" parameter (lines 56 70, 84)
+ * 4. Deploy this worker and use the worker URL as your subscription link
+ * 5. Every time you click "Update" in your client, fresh clean IPs are automatically injected
+ * 
+ * FEATURES:
+ * - Generates 30 VLESS configs (10 per group by default, customizable via ipCount line 35.)
+ * - Supports both TLS and non-TLS configurations
+ * - Auto-fetches clean Cloudflare IPs from multiple sources
+ * - Fake subscription info for client compatibility
+ * - Randomizable paths and SNI for better censorship resistance
+ * 
+ * We are all REvil
+ */
+
 // ——— USER CONFIGURATION SECTION ———
 const USER_SETTINGS = {
   // Your UUID - Replace with your own UUID
@@ -10,6 +38,16 @@ const USER_SETTINGS = {
   ed: "2560",
   eh: "Sec-WebSocket-Protocol",
 
+  /** 
+   * ——— Configuration Groups ———
+   * - You can add, remove, or modify groups as needed
+   * - Each group can have different settings for hosts, ports, TLS, etc.
+   * 
+   * Available Clean IP Source options:
+   *   - "static": Uses manually defined IPs from the staticIPs array
+   *   - "dynamic1": Fetches IPs from NiREvil's GitHub repository
+   *   - "dynamic2": Fetches IPs from strawberry API
+   */
   groups: [
     {
       // ——— Group 1: TLS Configuration ———
@@ -44,7 +82,7 @@ const USER_SETTINGS = {
       name: "| HAЯMOИY ᴱᴹˢ |",
       host: "index.harmony715.workers.dev",
       sni: "index.harmony715.workers.dev",
-      path: "/random:14?ed=2048", // Fixed path value optimized for xray core
+      path: "/random:16?ed=2048", // Fixed path value optimized for xray core
       tls: true,
       allowInsecure: true,
       ports: ["443", "8443", "2053"],
@@ -56,6 +94,11 @@ const USER_SETTINGS = {
   ],
 };
 
+/**
+ * ——— IP DATA SOURCES ———
+ * Static IP list - Manually defined IPs and domains
+ * You can add or remove IPs as needed
+ */
 const staticIPs = [
   '[::ffff:be5d:f6f1]',
   '[::ffff:5fb3:83ef]',
@@ -684,7 +727,6 @@ const staticIPs = [
   'go.inmobi.com',
   'cf.090227.xyz',
   'www.visa.com',
-  'chatgpt.com',
   'www.wto.org',
   'lb.nscl.ir',
   'cdnjs.com',
@@ -693,6 +735,21 @@ const staticIPs = [
   'fbi.gov',
   'time.is',
   'icook.hk',
+  'creativecommons.org',
+  '2027.victoriacross.ir',
+  'sky.rethinkdns.com',
+  'www.speedtest.net',
+  'cfip.1323123.xyz',
+  'chat.openai.com',
+  'cfip.xxxxxxxx.tk',
+  'go.inmobi.com',
+  'singapore.com',
+  'www.visa.com',
+  'www.wto.org',
+  'chatgpt.com',
+  'nodejs.org',
+  'cdnjs.com',
+  'csgo.com',
   'zzula.ir',
   '104.16.13.40',
   '104.16.53.11',
@@ -918,6 +975,11 @@ const ipSourceURLs = {
   dynamic2: "https://strawberry.victoriacross.ir"
 };
 
+/**
+ * ——— CAKE SUBSCRIPTION INFO SETTINGS ———
+ * These values create fake usage statistics for subscription clients
+ * Customize these values to display desired traffic and expiry information
+ */
 const CAKE_INFO = {
   total_TB: 382, // Total traffic quota in Terabytes
   base_GB: 88000, // Base usage that's always shown (in Gigabytes)
@@ -935,40 +997,49 @@ addEventListener("fetch", (event) => {
  * @param {Request} _request - The incoming HTTP request
  * @returns {Promise<Response>} - Response containing base64-encoded VLESS links
  */
-async function handleRequest(_request) {
-  const url = new URL(_request.url);
-  const subNameParam = url.searchParams.get('name');
-  const subNameHash = url.hash ? decodeURIComponent(url.hash.substring(1)) : null;
-  const profileTitle = subNameParam || subNameHash || "Harmony";
-  const configsList = [];
 
+async function handleRequest(_request) {
   try {
-    // Fetch dynamic IP lists from external sources
+    const url = new URL(_request.url);
+    const subNameParam = url.searchParams.get('name');
+    
+    let subNameHash = null;
+    try {
+
+      subNameHash = url.hash ? decodeURIComponent(url.hash.substring(1)) : null;
+    } catch (e) {
+      subNameHash = "Harmony";
+    }
+    
+    const profileTitle = subNameParam || subNameHash || "Harmony";
+    const configsList = [];
+
     const [ipv4listRE1, ipv4listRE2] = await Promise.all([
       fetch(ipSourceURLs.dynamic1)
-        .then((res) => res.json())
+        .then((res) => res.ok ? res.json() : { ipv4: [] })
         .catch(() => ({ ipv4: [] })),
       fetch(ipSourceURLs.dynamic2)
-        .then((res) => res.json())
+        .then((res) => res.ok ? res.json() : { data: [] })
         .catch(() => ({ data: [] }))
     ]);
 
-    // Extract IP addresses from responses
-    const ipListRE1 = (ipv4listRE1.ipv4 || [])
-      .map((/** @type {{ ip: any; }} */ ipData) => ipData.ip)
-      .filter((/** @type {any} */ ip) => ip);
-    const ipListRE2 = (ipv4listRE2.data || [])
-      .map((/** @type {{ ipv4: any; }} */ item) => item.ipv4)
-      .filter((/** @type {any} */ ip) => ip);
+    // Extract IP addresses with safe mapping (استفاده از ?. برای جلوگیری از کرش مپ)
+    const ipListRE1 = (Array.isArray(ipv4listRE1?.ipv4) ? ipv4listRE1.ipv4 : [])
+      .map((ipData) => ipData?.ip)
+      .filter(Boolean);
+      
+    const ipListRE2 = (Array.isArray(ipv4listRE2?.data) ? ipv4listRE2.data : [])
+      .map((item) => item?.ipv4)
+      .filter(Boolean);
 
-    // Prepare IP data sources with shuffled, deduplicated lists
+    // Prepare IP data sources
     const ipDataSources = {
       static: shuffleArray([...new Set(staticIPs)]),
       dynamic1: shuffleArray([...new Set(ipListRE1)]),
       dynamic2: shuffleArray([...new Set(ipListRE2)])
     };
 
-    // Generate configurations based on defined groups
+    // Generate configurations
     for (const group of USER_SETTINGS.groups) {
       const ipList = ipDataSources[group.dataSource] || [];
       const uniqueIPs = new Set();
@@ -983,27 +1054,30 @@ async function handleRequest(_request) {
       }
     }
 
-    // Generate fake subscription info headers
     const subInfo = generateCakeSubscriptionInfo();
 
-    // Return base64-encoded configuration list with subscription headers
     const headers = {
       "Content-Type": "text/plain; charset=utf-8",
-      "Profile-Update-Interval": "6", // Client should update every 6 hours
-      "Subscription-Userinfo": subInfo, // Cake usage statistics
+      "Profile-Update-Interval": "6",
+      "Subscription-Userinfo": subInfo,
     };
 
     if (profileTitle) {
-      headers["Profile-Title"] = profileTitle;
+  
+      headers["Profile-Title"] = encodeURIComponent(profileTitle);
+    }
+
+    if (configsList.length === 0) {
+      throw new Error("No configs generated");
     }
 
     return new Response(btoa(configsList.join("\n")), {
       status: 200,
       headers: headers
     });
+    
   } catch (error) {
-    // Error handling - return empty config list on failure
-    return new Response(btoa("# Error generating configurations"), {
+    return new Response(btoa("# Error generating configurations\n# Reason: " + error.message), {
       status: 200,
       headers: {
         "Content-Type": "text/plain; charset=utf-8"
