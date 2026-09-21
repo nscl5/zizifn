@@ -45,9 +45,61 @@ export const Config = {
       proxyPool: pool,
       proxyAddress: pool[0],
       workerName: env.WORKERNAME || "",
+      // set env var NAT64 = "off" to disable the NAT64 fallback
+      nat64: env.NAT64 !== "off",
     };
   },
 };
+
+const IPV4_REGEX = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+// Resolve a hostname to an IPv4 address via DNS-over-HTTPS.
+// Returns the input unchanged if it is already an IPv4 literal.
+export async function resolveIPv4ViaDoH(hostname) {
+  if (IPV4_REGEX.test(hostname)) return hostname;
+  try {
+    const resp = await safeFetch(
+      `https://1.1.1.1/dns-query?name=${encodeURIComponent(hostname)}&type=A`,
+      { headers: { accept: "application/dns-json" } },
+      4000,
+    );
+    const data = await resp.json();
+    const answer = (data.Answer || []).find((a) => a.type === 1);
+    return answer ? answer.data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Resolve a domain-based ProxyIP host to every backing IPv4 address
+// Cloudflare's own scamalytics mirror knows about, each already carrying
+// its risk score and geolocation — so a single call replaces the old
+// "one DNS answer + separate geolocate + separate risk lookup" chain.
+// This endpoint walks a real IP pool (tens of entries for hosts like
+// di.nscl.ir) and can take a while, hence the generous default timeout.
+export async function fetchDomainIpPool(domain, timeout = 60000) {
+  try {
+    const res = await safeFetch(
+      `https://cloudflare-scamalytics.pages.dev/api/domain/${encodeURIComponent(domain)}`,
+      {},
+      timeout,
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data || data.success === false || !Array.isArray(data.results)) return [];
+    return data.results
+      .filter((r) => r && typeof r.ip === "string" && IPV4_REGEX.test(r.ip))
+      .map((r) => ({
+        ip: r.ip,
+        score: typeof r.fraud_score === "number" ? r.fraud_score : null,
+        risk: r.risk ? r.risk.charAt(0).toUpperCase() + r.risk.slice(1) : "Unknown",
+        country: r.details?.country || "Unknown",
+        countryCode: (r.details?.country_code || "").toLowerCase(),
+      }));
+  } catch (e) {
+    return [];
+  }
+}
 
 export async function safeFetch(url, options = {}, timeout = 4000) {
   const controller = new AbortController();
@@ -72,6 +124,32 @@ export function generateRandomPath(length = 28, query = "") {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return `/${result}${query ? `?${query}` : ""}`;
+}
+
+// Append a per-config NAT64 / ProxyIP override onto a generated ws
+// path. The worker parses these case-insensitively (see
+// parsePathOverrides in network.js) purely for robustness — the
+// actual camouflage comes from the random noise characters that
+// generateRandomPath() already mixes upper/lower case into, not from
+// scrambling these keywords themselves.
+export function withConfigOverrides(path, { nat64, proxyIP } = {}) {
+  const params = [];
+  if (nat64 !== undefined) {
+    params.push(`nat64=${nat64 ? "on" : "off"}`);
+  }
+  if (proxyIP) {
+    // Not encodeURIComponent()'d: ":" is not a reserved delimiter inside a
+    // query value, and leaving it literal here means clients that only do
+    // a single decode pass on the outer link (many do) still end up with
+    // a clean "proxyip=1.2.3.4:443" instead of a mangled "...%3A443" (or
+    // worse, a doubly-escaped "...%253A443") in the ws path they connect
+    // with. parsePathOverrides() in network.js reads it back with a plain
+    // string split, so no decoding is required on the server side either.
+    params.push(`proxyip=${proxyIP}`);
+  }
+  if (!params.length) return path;
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}${params.join("&")}`;
 }
 
 export const CORE_PRESETS = {
@@ -101,6 +179,17 @@ export const CORE_PRESETS = {
     },
   },
 };
+
+// Converts a 2-letter ISO country code into its flag emoji (regional
+// indicator symbols), e.g. "us" -> "🇺🇸". Used so country names in
+// subscription config remarks/tags carry more than just a bare code.
+export function countryCodeToFlagEmoji(countryCode) {
+  if (!countryCode || countryCode.length !== 2) return "";
+  const code = countryCode.toUpperCase();
+  const points = [...code].map((c) => 0x1f1e6 + (c.charCodeAt(0) - 65));
+  if (points.some((p) => p < 0x1f1e6 || p > 0x1f1ff)) return "";
+  return String.fromCodePoint(...points);
+}
 
 export function makeName(tag, proto) {
   return `${tag}-${proto.toUpperCase()}`;
@@ -133,14 +222,25 @@ export function createVlessLink({
   return `${CONST.VLESS_PROTOCOL}://${userID}@${address}:${port}?${params.toString()}#${encodeURIComponent(name)}`;
 }
 
-export function buildLink({ core, proto, userID, hostName, address, port, tag, enhanced = false }) {
+export function buildLink({
+  core,
+  proto,
+  userID,
+  hostName,
+  address,
+  port,
+  tag,
+  enhanced = false,
+  overrides,
+}) {
   const p = CORE_PRESETS[core][proto];
+  const path = overrides ? withConfigOverrides(p.path(), overrides) : p.path();
   return createVlessLink({
     userID,
     address,
     port,
     host: hostName,
-    path: p.path(),
+    path,
     security: p.security,
     sni: p.security === "tls" ? hostName : undefined,
     fp: enhanced && p.security === "tls" ? "unsafe" : p.fp,
