@@ -8,6 +8,7 @@ import {
   handleIpSubscription,
   handleMyConnection,
   handleResolveDomain,
+  handleProxyIpsInfo,
 } from "./src/routes.js";
 
 let wasmReady = null;
@@ -87,21 +88,24 @@ export default {
         return ProtocolOverWSHandler(request, {
           userID: cfg.userID,
           proxyPool: cfg.proxyPool,
+          nat64: cfg.nat64,
         });
       }
 
       if (url.pathname === "/resolve-domain") return handleResolveDomain(request);
       if (url.pathname === "/my-connection") return handleMyConnection(request, env, ctx);
+      if (url.pathname.startsWith(`/proxy-ips/${cfg.userID}`))
+        return handleProxyIpsInfo(request, cfg, url.hostname, ctx);
       if (url.pathname.startsWith(`/xray-enhanced/${cfg.userID}`))
-        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, true);
+        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, true, cfg);
       if (url.pathname.startsWith(`/xray/${cfg.userID}`))
-        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, false);
+        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, false, cfg);
       if (url.pathname.startsWith(`/sb/${cfg.userID}`))
-        return handleIpSubscription(request, "sb", cfg.userID, url.hostname, ctx);
+        return handleIpSubscription(request, "sb", cfg.userID, url.hostname, ctx, false, cfg);
       if (url.pathname.startsWith(`/clash/${cfg.userID}`))
         return handleClashConfig(request, cfg.userID, url.hostname, ctx);
       if (url.pathname.startsWith(`/${cfg.userID}`))
-        return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress, cfg.workerName);
+        return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress, cfg.workerName, cfg.nat64);
 
       return new Response(notFoundPage(url.hostname, cfg.workerName), {
         status: 404,
