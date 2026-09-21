@@ -1049,6 +1049,228 @@
         border-color: rgba(88, 166, 255, 0.3);
       }
 
+      /* --- NAT64 / ProxyIPs row --- */
+      .cards-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-items: stretch;
+      }
+
+      .cards-row .config-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .cards-row .nat64-card .nat64-copy-btn {
+        margin-top: auto;
+      }
+
+      .card-desc {
+        margin: 0 0 10px;
+        color: var(--fgColor-muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-flex;
+        flex: 0 0 auto;
+      }
+
+      .switch input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+      }
+
+      .switch-track {
+        width: 38px;
+        height: 22px;
+        border-radius: 999px;
+        background: var(--bgColor-overlay);
+        border: 1px solid var(--borderColor-default);
+        display: inline-flex;
+        align-items: center;
+        padding: 2px;
+        cursor: pointer;
+        transition: background-color var(--transition), border-color var(--transition);
+      }
+
+      .switch-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--fgColor-muted);
+        transition: transform var(--transition), background-color var(--transition);
+      }
+
+      .switch input:checked+.switch-track {
+        background: var(--accent-emphasis);
+        border-color: var(--accent-emphasis);
+      }
+
+      .switch input:checked+.switch-track .switch-thumb {
+        transform: translateX(16px);
+        background: #fff;
+      }
+
+      .switch input:focus-visible+.switch-track {
+        outline: 2px solid var(--focus-outline);
+        outline-offset: 1px;
+      }
+
+      .nat64-status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 7px 0;
+        border-top: 1px solid var(--borderColor-muted);
+        font-size: 12px;
+        color: var(--fgColor-muted);
+      }
+
+      .nat64-copy-btn {
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .proxyip-country-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+
+      .proxyip-country-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 9px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 999px;
+        background: var(--bgColor-inset);
+        color: var(--fgColor-default);
+        font: inherit;
+        font-size: 11px;
+        cursor: pointer;
+        transition: background-color var(--transition), border-color var(--transition), color var(--transition);
+      }
+
+      .proxyip-country-btn:hover {
+        border-color: var(--fgColor-accent);
+      }
+
+      .proxyip-country-btn .flag {
+        font-size: 13px;
+        line-height: 1;
+      }
+
+      .proxyip-country-btn .risk-hint {
+        color: var(--fgColor-muted);
+        font-size: 10px;
+      }
+
+      .proxyip-country-btn.active {
+        background: var(--accent-muted);
+        border-color: var(--accent-emphasis);
+        color: #79c0ff;
+      }
+
+      .proxyip-country-btn.active .risk-hint {
+        color: inherit;
+        opacity: 0.85;
+      }
+
+      .proxyip-host-select {
+        width: 100%;
+        min-height: 26px;
+        margin-top: 2px;
+        padding: 3px 6px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: var(--radius-sm);
+        background: var(--bgColor-overlay);
+        color: var(--fgColor-default);
+        font: inherit;
+        font-size: 11px;
+      }
+
+      .proxyip-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+        min-height: 0;
+        max-height: 360px;
+        overflow-y: auto;
+      }
+
+      .proxyip-item-host .pool-tag {
+        font-family: var(--font-sans, inherit);
+        font-size: 10px;
+        color: var(--fgColor-muted);
+        border: 1px solid var(--borderColor-muted);
+        border-radius: var(--radius-sm);
+        padding: 0 4px;
+        margin-inline-start: 4px;
+      }
+
+      .proxyip-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 9px 10px;
+        background: var(--bgColor-inset);
+        border: 1px solid var(--borderColor-muted);
+        border-radius: var(--radius-md);
+      }
+
+      .proxyip-item-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .proxyip-item-host {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--fgColor-default);
+      }
+
+      .proxyip-item-configs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .proxyip-item-configs .icon-btn {
+        width: 100%;
+        gap: 5px;
+        font-size: 11px;
+      }
+
+      .proxyip-empty {
+        color: var(--fgColor-muted);
+        font-size: 12px;
+        padding: 6px 0;
+      }
+
+      @media (max-width: 760px) {
+        .cards-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .skeleton {
         display: block;
         width: 100%;
@@ -1408,6 +1630,53 @@
         </div>
       </div>
 
+      <div class="cards-row">
+        <div class="config-card nat64-card">
+          <div class="config-title">
+            <span>NAT64 Fallback</span>
+            <label class="switch" aria-label="Toggle NAT64 fallback for the copied config">
+              <input type="checkbox" id="nat64-toggle" data-default="{{NAT64_DEFAULT}}">
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+          <p class="card-desc">
+            If both the direct route and every configured ProxyIP fail, the worker can translate the destination into a
+            64:ff9b::/96 address and let Cloudflare's own NAT64 gateway reach it. Turn it off to force the worker to give up
+            instead of falling back.
+          </p>
+          <div class="nat64-status-row">
+            <span>Server default</span>
+            <span id="nat64-server-badge" class="badge badge-neutral">…</span>
+          </div>
+          <div class="nat64-status-row">
+            <span>This config</span>
+            <span id="nat64-config-badge" class="badge badge-neutral">…</span>
+          </div>
+          <button id="nat64-copy-btn" type="button" class="icon-btn nat64-copy-btn" aria-label="Copy config with this NAT64 setting" data-nat64-on="{{CONFIG_NAT64_ON}}" data-nat64-off="{{CONFIG_NAT64_OFF}}">
+            <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="button-text">Copy Xray config with this setting</span>
+          </button>
+        </div>
+
+        <div id="proxyip-card" class="config-card proxyip-card" data-url="{{URL_PROXYIPS}}">
+          <div class="config-title">
+            <span>ProxyIPs</span>
+            <button id="proxyip-refresh" class="refresh-btn" aria-label="Refresh ProxyIP list" title="Refresh ProxyIP list">
+              <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+              </svg>
+            </button>
+          </div>
+          <div id="proxyip-country-buttons" class="proxyip-country-buttons"></div>
+          <div id="proxyip-list" class="proxyip-list">
+            <div class="proxyip-empty">Loading ProxyIPs…</div>
+          </div>
+        </div>
+      </div>
+
       <div class="config-card">
         <div class="config-title">
           <span>Xray Core Clients</span>
@@ -1754,6 +2023,252 @@
         return `vless://${userID}@${newHost}:${newPort}${queryString}#${encodeURIComponent(newName)}`;
       }
 
+      // Matches the worker's own makeName(tag, proto) convention
+      // (src/core.js: `${tag}-${proto.toUpperCase()}`) instead of a
+      // one-off naming scheme, so client-generated configs look and sort
+      // consistently with everything the worker itself names.
+      function makeClientConfigName(baseLink, tag) {
+        const securityMatch = baseLink.match(/[?&]security=([^&#]+)/);
+        const proto = securityMatch && securityMatch[1] !== "none" ? "tls" : "tcp";
+        return `${tag}-${proto.toUpperCase()}`;
+      }
+
+      // Sets/overwrites a key (e.g. nat64=on/off) inside the ws path query
+      // that's embedded in a VLESS link's own `path` param, mirroring the
+      // worker's withConfigOverrides()/parsePathOverrides() on the backend.
+      function withPathOverride(rawLink, overrides = {}) {
+        const match = rawLink.match(/^(vless:\/\/[^?#]+)(\?[^#]*)?(#.*)?$/);
+        if (!match) return rawLink;
+        const [, prefix, query = "", hash = ""] = match;
+        const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
+        const rawPath = params.get("path") || "/";
+        const [pathPart, pathQuery = ""] = rawPath.split("?");
+        const pathParams = new URLSearchParams(pathQuery);
+        Object.entries(overrides).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          pathParams.set(key, value);
+        });
+        const pathQs = pathParams.toString();
+        params.set("path", pathQs ? `${pathPart}?${pathQs}` : pathPart);
+        return `${prefix}?${params.toString()}${hash}`;
+      }
+
+      function initNat64Card() {
+        const toggle = document.getElementById("nat64-toggle");
+        const serverBadge = document.getElementById("nat64-server-badge");
+        const configBadge = document.getElementById("nat64-config-badge");
+        const copyBtn = document.getElementById("nat64-copy-btn");
+        if (!toggle || !serverBadge || !configBadge || !copyBtn) return;
+
+        const defaultOn = toggle.dataset.default !== "off";
+        toggle.checked = defaultOn;
+
+        const renderBadge = (el, on) => {
+          el.textContent = on ? "Enabled" : "Disabled";
+          el.className = `badge ${on ? "badge-yes" : "badge-no"}`;
+        };
+        renderBadge(serverBadge, defaultOn);
+
+        const sync = () => renderBadge(configBadge, toggle.checked);
+        sync();
+        toggle.addEventListener("change", sync);
+
+        copyBtn.addEventListener("click", () => {
+          // Server-precomputed full links (see {{CONFIG_NAT64_ON}}/{{CONFIG_NAT64_OFF}}
+          // in handleConfigPage), so the copied config is always correctly
+          // named "NAT64-TLS" and keeps every field (alpn included) exactly
+          // as buildLink() generated it, instead of patching just the ws
+          // path of the unrelated "xray-config" link and leaving its name
+          // and the rest of its params untouched.
+          const link = toggle.checked ? copyBtn.dataset.nat64On : copyBtn.dataset.nat64Off;
+          if (!link) return;
+          copyToClipboard(copyBtn, link);
+        });
+      }
+
+      function proxyRiskBadgeClass(score) {
+        const n = Number(score);
+        if (Number.isNaN(n)) return "badge-neutral";
+        if (n >= 75) return "badge-no";
+        if (n >= 40) return "badge-warning";
+        return "badge-yes";
+      }
+
+      // Country codes aren't emoji by themselves; this turns "us" into 🇺🇸
+      // via the regional-indicator trick, same as countryCodeToFlagEmoji()
+      // in src/core.js (duplicated here since index.html isn't part of the
+      // worker's own module bundle).
+      function countryFlagEmoji(countryCode) {
+        if (!countryCode || countryCode.length !== 2) return "";
+        const points = [...countryCode.toUpperCase()].map((c) => 0x1f1e6 + (c.charCodeAt(0) - 65));
+        if (points.some((p) => p < 0x1f1e6 || p > 0x1f1ff)) return "";
+        return String.fromCodePoint(...points);
+      }
+
+      function renderProxyEntryRow(entry, poolTag) {
+        const badgeClass = proxyRiskBadgeClass(entry.score);
+        const configButtons = entry.configs
+          .map(
+            (cfgItem) => `
+              <button type="button" class="icon-btn" data-proxyip-link="${encodeURIComponent(cfgItem.link)}" aria-label="Copy ${escapeHtml(cfgItem.label)} config for ${escapeHtml(entry.ip)}">
+                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>${escapeHtml(cfgItem.label)}</span>
+              </button>
+            `,
+          )
+          .join("");
+        // poolTag is trusted markup we built ourselves (see renderProxyHostGroup)
+        // and must NOT be run through escapeHtml, or the <span> gets shown as
+        // literal text instead of rendering as the little "pool"/"static" pill.
+        return `
+          <div class="proxyip-item-head">
+            <span class="proxyip-item-host">${escapeHtml(`${entry.host} (${entry.ip})`)}${poolTag ?? ""}</span>
+            <span class="badge ${badgeClass}">${escapeHtml(entry.score ?? "?")} - ${escapeHtml(entry.risk || "Unknown")}</span>
+          </div>
+          <div class="proxyip-item-configs">${configButtons}</div>
+        `;
+      }
+
+      // A pool host (usually a domain) can back several IPs. Rather than
+      // list every one of them as an indistinguishable flat row, hosts
+      // with more than one resolved IP get a single card with a <select>
+      // of their IPs - defaulting to the lowest-risk one (entries are
+      // already sorted ascending by risk server-side) - and the copy
+      // buttons update to that selection.
+      function renderProxyHostGroup(hostGroup) {
+        const poolTag = hostGroup.hostType === "domain" ?
+          `<span class="pool-tag" title="Resolved from a domain that may back more IPs than shown">pool</span>` :
+          `<span class="pool-tag" title="Fixed IP from the ProxyIP config">static</span>`;
+
+        if (hostGroup.entries.length <= 1) {
+          const entry = hostGroup.entries[0];
+          const div = document.createElement("div");
+          div.className = "proxyip-item";
+          div.innerHTML = renderProxyEntryRow(entry, poolTag);
+          return div;
+        }
+
+        const div = document.createElement("div");
+        div.className = "proxyip-item";
+        const options = hostGroup.entries
+          .map((entry, i) => `<option value="${i}">${escapeHtml(entry.ip)} · ${escapeHtml(entry.score ?? "?")} - ${escapeHtml(entry.risk || "Unknown")}</option>`)
+          .join("");
+        div.innerHTML = `
+          <div class="proxyip-item-head">
+            <span class="proxyip-item-host">${escapeHtml(hostGroup.host)}${poolTag}</span>
+          </div>
+          <select class="proxyip-host-select" aria-label="Choose an IP for ${escapeHtml(hostGroup.host)}">${options}</select>
+          <div class="proxyip-item-configs"></div>
+        `;
+        const select = div.querySelector(".proxyip-host-select");
+        const configsEl = div.querySelector(".proxyip-item-configs");
+        const renderSelected = () => {
+          const entry = hostGroup.entries[Number(select.value)];
+          configsEl.innerHTML = entry.configs
+            .map(
+              (cfgItem) => `
+                <button type="button" class="icon-btn" data-proxyip-link="${encodeURIComponent(cfgItem.link)}" aria-label="Copy ${escapeHtml(cfgItem.label)} config for ${escapeHtml(entry.ip)}">
+                  <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>${escapeHtml(cfgItem.label)}</span>
+                </button>
+              `,
+            )
+            .join("");
+        };
+        select.value = "0"; // lowest-risk IP, since entries are pre-sorted ascending
+        select.addEventListener("change", renderSelected);
+        renderSelected();
+        return div;
+      }
+
+      function renderProxyIpCountry(groups, countryName) {
+        const list = document.getElementById("proxyip-list");
+        if (!list) return;
+        const group = groups.find((g) => g.country === countryName);
+        if (!group || !group.hosts.length) {
+          list.innerHTML = `<div class="proxyip-empty">No ProxyIPs found for this country.</div>`;
+          return;
+        }
+        list.innerHTML = "";
+        group.hosts.forEach((hostGroup) => list.appendChild(renderProxyHostGroup(hostGroup)));
+      }
+
+      function renderProxyCountryButtons(groups, activeCountry, onSelect) {
+        const bar = document.getElementById("proxyip-country-buttons");
+        if (!bar) return;
+        // Server already sorts groups "country - risk, ascending" (lowest
+        // overall-risk country first); buttons are rendered in that order.
+        bar.innerHTML = groups
+          .map((g) => {
+            const flag = g.flag || countryFlagEmoji(g.countryCode) || "🏳️";
+            const riskHint = g.lowestScore != null ? `${escapeHtml(g.lowestScore)} - ${escapeHtml(g.lowestRisk)}` : "no score";
+            return `
+              <button type="button" class="proxyip-country-btn${g.country === activeCountry ? " active" : ""}" data-country="${escapeHtml(g.country)}">
+                <span class="flag">${flag}</span>
+                <span>${escapeHtml(g.country)}</span>
+                <span class="risk-hint">${riskHint}</span>
+              </button>
+            `;
+          })
+          .join("");
+        bar.querySelectorAll("[data-country]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            bar.querySelectorAll(".proxyip-country-btn").forEach((b) => b.classList.toggle("active", b === btn));
+            onSelect(btn.getAttribute("data-country"));
+          });
+        });
+      }
+
+      async function initProxyIpCard() {
+        const card = document.getElementById("proxyip-card");
+        const bar = document.getElementById("proxyip-country-buttons");
+        const list = document.getElementById("proxyip-list");
+        const refreshBtn = document.getElementById("proxyip-refresh");
+        if (!card || !bar || !list) return;
+        const url = card.getAttribute("data-url");
+        if (!url) return;
+
+        // Delegated once: covers both the static rows and the dynamically
+        // re-rendered config buttons under a host's IP <select>, so a
+        // change to the selected IP never needs its own listener rewiring.
+        list.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-proxyip-link]");
+          if (!btn) return;
+          const link = decodeURIComponent(btn.getAttribute("data-proxyip-link"));
+          copyToClipboard(btn, link);
+        });
+
+        const load = async () => {
+          list.innerHTML = `<div class="proxyip-empty">Loading ProxyIPs…</div>`;
+          bar.innerHTML = "";
+          try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("Request failed");
+            const data = await res.json();
+            const groups = (data.groups || []).filter((g) => g.hosts && g.hosts.length);
+            if (!groups.length) {
+              list.innerHTML = `<div class="proxyip-empty">No ProxyIPs available right now.</div>`;
+              return;
+            }
+            const initialCountry = groups[0].country;
+            renderProxyCountryButtons(groups, initialCountry, (country) => renderProxyIpCountry(groups, country));
+            renderProxyIpCountry(groups, initialCountry);
+          } catch (e) {
+            console.error("ProxyIPs load failed:", e);
+            list.innerHTML = `<div class="proxyip-empty">Could not load ProxyIPs. Try refreshing.</div>`;
+          }
+        };
+
+        refreshBtn?.addEventListener("click", load);
+        await load();
+      }
+
       function formatConfigForDisplay(rawLink, maxParamLen = 60) {
         const match = rawLink.match(/^(vless:\/\/[^?#]+)(\?[^#]*)?(#.*)?$/);
         if (!match) return rawLink;
@@ -2038,9 +2553,9 @@
             port = parts[1];
           }
           try {
-            const xrFinal = rebuildVlessLink(xrayBase, host, port, `Clean-${index + 1}-Xray`);
+            const xrFinal = rebuildVlessLink(xrayBase, host, port, makeClientConfigName(xrayBase, `Clean${index + 1}-Xray`));
             customConfigs.push(xrFinal);
-            const sbFinal = rebuildVlessLink(sbBase, host, port, `Clean-${index + 1}-Singbox`);
+            const sbFinal = rebuildVlessLink(sbBase, host, port, makeClientConfigName(sbBase, `Clean${index + 1}-Singbox`));
             customConfigs.push(sbFinal);
           } catch (e) {
             console.error("Link generation failed for custom route:", e);
@@ -2171,6 +2686,8 @@
         const yearEl = document.getElementById("current-year");
         if (yearEl) yearEl.textContent = new Date().getFullYear();
         loadNetworkInfo();
+        initNat64Card();
+        initProxyIpCard();
         const savedIps = localStorage.getItem("custom_clean_ips");
         if (savedIps) {
           document.getElementById("custom-ips-input").value = savedIps;
