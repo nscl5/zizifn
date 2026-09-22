@@ -1,4 +1,4 @@
-name: ⚪ Deploy Worker
+name: ⚪ Deploy Worker (Multi-Account)
 
 on:
   push:
@@ -6,6 +6,26 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      account_1:
+        description: "Deploy to Account 1 — rename this to your account's label, e.g. 'Deploy to Personal'"
+        required: false
+        type: boolean
+        default: true
+      account_2:
+        description: "Deploy to Account 2 — rename this to your account's label"
+        required: false
+        type: boolean
+        default: false
+      account_3:
+        description: "Deploy to Account 3 — rename this to your account's label"
+        required: false
+        type: boolean
+        default: false
+      account_4:
+        description: "Deploy to Account 4 — rename this to your account's label"
+        required: false
+        type: boolean
+        default: false
       workername:
         description: "Optional: Enter a specific Worker name for this run (lowercase only)"
         required: false
@@ -52,8 +72,45 @@ on:
         default: ""
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - name: ▶ Build account matrix
+        id: build
+        env:
+          EVENT: ${{ github.event_name }}
+          SEL_1: ${{ inputs.account_1 }}
+          SEL_2: ${{ inputs.account_2 }}
+          SEL_3: ${{ inputs.account_3 }}
+          SEL_4: ${{ inputs.account_4 }}
+        run: |
+          ITEMS="[]"
+          add() { ITEMS=$(echo "$ITEMS" | jq --argjson n "$1" '. + [{"index": $n}]'); }
+
+          if [ "$EVENT" != "workflow_dispatch" ]; then
+            add 1
+          else
+            [ "$SEL_1" = "true" ] && add 1
+            [ "$SEL_2" = "true" ] && add 2
+            [ "$SEL_3" = "true" ] && add 3
+            [ "$SEL_4" = "true" ] && add 4
+          fi
+
+          if [ "$(echo "$ITEMS" | jq 'length')" = "0" ]; then
+            echo "::error::No Cloudflare account selected - tick at least one account checkbox and re-run."
+            exit 1
+          fi
+
+          echo "matrix=$(echo "$ITEMS" | jq -c '{include: .}')" >> "$GITHUB_OUTPUT"
+
   deploy:
-    runs-on: ubuntu-26.04
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
     steps:
       - name: ▶ Checkout code
         uses: actions/checkout@v7
@@ -64,11 +121,25 @@ jobs:
       - name: ▶ Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
+      - name: ▶ Resolve account credentials (#${{ matrix.index }})
+        id: account
+        env:
+          API_TOKEN: ${{ secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
+          ACCOUNT_ID: ${{ secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
+          ACCOUNT_LABEL: ${{ vars[format('CLOUDFLARE_ACCOUNT_{0}_LABEL', matrix.index)] }}
+        run: |
+          if [ -z "$API_TOKEN" ] || [ -z "$ACCOUNT_ID" ]; then
+            echo "::error::Account #${{ matrix.index }} is selected but its CLOUDFLARE_API_TOKEN_${{ matrix.index }} / CLOUDFLARE_ACCOUNT_ID_${{ matrix.index }} secrets aren't set."
+            exit 1
+          fi
+          LABEL="${ACCOUNT_LABEL:-Account ${{ matrix.index }}}"
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+
       - name: ▶ Resolve UUID
         id: uuidval
         env:
           INPUT_UUID: ${{ inputs.uuid }}
-          SECRET_UUID: ${{ secrets.UUID }}
+          SECRET_UUID: ${{ secrets[format('UUID_{0}', matrix.index)] || secrets.UUID }}
         run: |
           UUID_REGEX="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
           FALLBACK_UUID="be0ff9df-1468-41a0-8865-796d1c6800db"
@@ -100,7 +171,7 @@ jobs:
         id: proxyval
         env:
           INPUT_PROXYIP: ${{ inputs.proxyip }}
-          SECRET_PROXYIP: ${{ secrets.PROXYIP }}
+          SECRET_PROXYIP: ${{ secrets[format('PROXYIP_{0}', matrix.index)] || secrets.PROXYIP }}
         run: |
           if [ -n "$INPUT_PROXYIP" ]; then
             PROXY_VALUE="$INPUT_PROXYIP"
@@ -125,9 +196,6 @@ jobs:
           SECRET_HOST: ${{ secrets.PLACEMENT_HOST }}
           SECRET_HOSTNAME: ${{ secrets.PLACEMENT_HOSTNAME }}
         run: |
-          # Cloudflare Workers Placement Hints: mode/region/host/hostname are
-          # mutually exclusive. See:
-          # https://developers.cloudflare.com/workers/configuration/placement/
           MODE="${INPUT_MODE:-$SECRET_MODE}"
           MODE="${MODE:-off}"
           case "$MODE" in
@@ -166,9 +234,12 @@ jobs:
 
       - name: ▶ Resolve worker name
         id: worker
+        env:
+          SECRET_WORKERNAME: ${{ secrets[format('WORKERNAME_{0}', matrix.index)] }}
         run: |
           DEFAULT_NAME=$(grep -m1 '^name' wrangler.toml | sed -E 's/name[[:space:]]*=[[:space:]]*"(.*)"/\1/')
           NAME="${{ inputs.workername }}"
+          if [ -z "$NAME" ]; then NAME="$SECRET_WORKERNAME"; fi
           if [ -z "$NAME" ]; then NAME="$DEFAULT_NAME"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
@@ -184,12 +255,12 @@ jobs:
             echo "${{ steps.placementval.outputs.key }} = \"${{ steps.placementval.outputs.value }}\""
           } >> wrangler.toml
 
-      - name: "▶ Deploy via Wrangler Action (${{ steps.worker.outputs.name }})"
+      - name: "▶ Deploy via Wrangler Action (${{ steps.worker.outputs.name }} → ${{ steps.account.outputs.label }})"
         id: deploy
         uses: cloudflare/wrangler-action@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
+          accountId: ${{ secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
           command: deploy --name ${{ steps.worker.outputs.name }}
           vars: |
             UUID
@@ -205,12 +276,13 @@ jobs:
           BASE_URL="${{ steps.deploy.outputs.deployment-url }}"
           BASE_URL="${BASE_URL%/}"
           {
-            echo "## 🟢 Deployment Successful"
+            echo "## 🟢 Deployment Successful — ${{ steps.account.outputs.label }}"
             echo ""
             echo "### 📥 Deployment"
             echo ""
             echo "| Property | Value |"
             echo "|:-----|:-----|"
+            echo "| **Account** | ${{ steps.account.outputs.label }} (slot ${{ matrix.index }}) |"
             echo "| **Worker** | \`${{ steps.worker.outputs.name }}\` |"
             echo "| **Base URL** | $BASE_URL |"
             echo "| **Status** | Deployed successfully |"
