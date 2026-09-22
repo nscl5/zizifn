@@ -9,6 +9,7 @@ import {
   handleMyConnection,
   handleResolveDomain,
   handleProxyIpsInfo,
+  handleProxyHostInfo,
 } from "./src/routes.js";
 
 let wasmReady = null;
@@ -93,15 +94,16 @@ export default {
       }
 
       if (url.pathname === "/resolve-domain") return handleResolveDomain(request);
+      if (url.pathname === "/proxy-host-info") return handleProxyHostInfo(request, env, ctx);
       if (url.pathname === "/my-connection") return handleMyConnection(request, env, ctx);
       if (url.pathname.startsWith(`/proxy-ips/${cfg.userID}`))
-        return handleProxyIpsInfo(request, cfg, url.hostname, ctx);
+        return handleProxyIpsInfo(request, cfg, url.hostname, ctx, env);
       if (url.pathname.startsWith(`/xray-enhanced/${cfg.userID}`))
-        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, true, cfg);
+        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, true, cfg, env);
       if (url.pathname.startsWith(`/xray/${cfg.userID}`))
-        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, false, cfg);
+        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, false, cfg, env);
       if (url.pathname.startsWith(`/sb/${cfg.userID}`))
-        return handleIpSubscription(request, "sb", cfg.userID, url.hostname, ctx, false, cfg);
+        return handleIpSubscription(request, "sb", cfg.userID, url.hostname, ctx, false, cfg, env);
       if (url.pathname.startsWith(`/clash/${cfg.userID}`))
         return handleClashConfig(request, cfg.userID, url.hostname, ctx);
       if (url.pathname.startsWith(`/${cfg.userID}`))
