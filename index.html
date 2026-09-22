@@ -1186,17 +1186,115 @@
         opacity: 0.85;
       }
 
-      .proxyip-host-select {
-        width: 100%;
-        min-height: 26px;
-        margin-top: 2px;
-        padding: 3px 6px;
+      .proxyip-bulk-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        background: var(--bgColor-inset);
+        border: 1px solid var(--borderColor-muted);
+        border-radius: var(--radius-md);
+      }
+
+      .proxyip-bulk-count {
+        font-size: 11px;
+        color: var(--fgColor-muted);
+        white-space: nowrap;
+      }
+
+      .proxyip-bulk-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .proxyip-bulk-actions .icon-btn {
+        font-size: 11px;
+      }
+
+      .proxyip-select {
+        width: 15px;
+        height: 15px;
+        flex: none;
+        accent-color: var(--accent-emphasis, #2f81f7);
+        cursor: pointer;
+      }
+
+      .proxyip-index {
+        flex: none;
+        min-width: 18px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--fgColor-muted);
+        text-align: right;
+      }
+
+      .proxyip-item-host-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .proxyip-ip-options {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-top: 4px;
+      }
+
+      .proxyip-ip-option {
         border: 1px solid var(--borderColor-default);
         border-radius: var(--radius-sm);
-        background: var(--bgColor-overlay);
-        color: var(--fgColor-default);
-        font: inherit;
+        overflow: hidden;
+        background: var(--bgColor-inset);
+      }
+
+      /* A single control does double duty: checking it both marks the IP
+         selected for bulk-copy (see updateProxyBulkBar) AND expands its
+         Xray/Singbox buttons below - there's no separate "pick one to
+         preview" toggle anymore, since two different checkboxes doing two
+         related things on the same row was confusing to use. */
+      .proxyip-ip-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 6px 8px;
+        cursor: pointer;
+      }
+
+      .proxyip-ip-addr {
+        flex: 1;
+        min-width: 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 11px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .proxyip-ip-configs {
+        display: none;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        /* Symmetric, and matching .proxyip-ip-toggle's own 8px horizontal
+           padding above it, so the buttons line up with the row instead
+           of sitting under an arbitrary indent that only happened to
+           match the old layout. */
+        padding: 8px;
+        /* Distinct from .icon-btn's own background (--bgColor-overlay) so
+           the copy buttons don't visually blend into their own container -
+           see .proxyip-item-configs .icon-btn below for the matching fix
+           on the single-IP layout. */
+        background: var(--bgColor-inset);
+        border-top: 1px solid var(--borderColor-muted);
+      }
+
+      .proxyip-ip-option.selected .proxyip-ip-configs {
+        display: grid;
       }
 
       .proxyip-list {
@@ -1253,10 +1351,30 @@
         gap: 6px;
       }
 
-      .proxyip-item-configs .icon-btn {
+      .proxyip-item-configs .icon-btn,
+      .proxyip-ip-configs .icon-btn {
         width: 100%;
         gap: 5px;
         font-size: 11px;
+      }
+
+      /* Both copy-config button locations (single-IP row and the
+         expanded multi-IP dropdown) sit on --bgColor-inset containers,
+         so give them their own lighter fill + accent-tinted border -
+         otherwise they read as flat/illegible against the surrounding
+         card instead of as clickable buttons. */
+      .proxyip-item-configs .icon-btn,
+      .proxyip-ip-configs .icon-btn {
+        background: var(--bgColor-muted);
+        border-color: var(--borderColor-default);
+        color: var(--fgColor-default);
+      }
+
+      .proxyip-item-configs .icon-btn:hover,
+      .proxyip-ip-configs .icon-btn:hover {
+        background: var(--accent-muted);
+        border-color: var(--accent-emphasis);
+        color: #79c0ff;
       }
 
       .proxyip-empty {
@@ -1668,9 +1786,29 @@
               <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
               </svg>
+              Refresh
             </button>
           </div>
           <div id="proxyip-country-buttons" class="proxyip-country-buttons"></div>
+          <div id="proxyip-bulk-bar" class="proxyip-bulk-bar">
+            <span id="proxyip-bulk-count" class="proxyip-bulk-count">0 selected</span>
+            <div class="proxyip-bulk-actions">
+              <button type="button" id="proxyip-bulk-copy-xray" class="icon-btn" disabled>
+                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Xray</span>
+              </button>
+              <button type="button" id="proxyip-bulk-copy-sb" class="icon-btn" disabled>
+                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Singbox</span>
+              </button>
+            </div>
+          </div>
           <div id="proxyip-list" class="proxyip-list">
             <div class="proxyip-empty">Loading ProxyIPs…</div>
           </div>
@@ -1910,13 +2048,17 @@
         }
         if (elements.isp) elements.isp.textContent = geo.isp || geo.organization || geo.org || "N/A";
       }
-      async function fetchIpApiIoInfo(ip) {
+      async function fetchProxyHostInfo(host) {
         try {
-          const response = await fetch(`https://ipapi.co/${ip}/json/`);
+          // Server-side lookup (DNS resolve + geolocation, both run from
+          // the worker, not the visitor's browser) - see handleProxyHostInfo
+          // in src/routes.js. Response shape matches what
+          // updateIpApiIoDisplay() already expects.
+          const response = await fetch(`/proxy-host-info?host=${encodeURIComponent(host)}`);
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           return await response.json();
         } catch (error) {
-          console.error("IP API Error (ipapi.co):", error);
+          console.error("Proxy host info error:", error);
           return null;
         }
       }
@@ -1980,19 +2122,7 @@
           const proxyHostEl = document.getElementById("proxy-host");
           if (proxyHostEl) proxyHostEl.textContent = proxyIpWithPort;
           if (proxyDomainOrIp && proxyDomainOrIp !== "N/A") {
-            let resolvedProxyIp = proxyDomainOrIp;
-            if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(proxyDomainOrIp)) {
-              try {
-                const dnsRes = await fetch(`/resolve-domain?domain=${encodeURIComponent(proxyDomainOrIp)}`);
-                if (dnsRes.ok) {
-                  const dnsData = await dnsRes.json();
-                  if (dnsData.ip) resolvedProxyIp = dnsData.ip;
-                }
-              } catch (e) {
-                console.error("DNS resolution for proxy failed:", e);
-              }
-            }
-            const proxyGeoData = await fetchIpApiIoInfo(resolvedProxyIp);
+            const proxyGeoData = await fetchProxyHostInfo(proxyDomainOrIp);
             updateIpApiIoDisplay(proxyGeoData, "proxy", proxyIpWithPort);
           } else {
             showError("proxy", "Proxy Host not available", proxyIpWithPort);
@@ -2105,8 +2235,10 @@
         return String.fromCodePoint(...points);
       }
 
-      function renderProxyEntryRow(entry, poolTag) {
+      function renderProxyEntryRow(entry, poolTag, index) {
         const badgeClass = proxyRiskBadgeClass(entry.score);
+        const xrayCfg = entry.configs.find((c) => c.label === "Xray");
+        const sbCfg = entry.configs.find((c) => c.label === "Singbox");
         const configButtons = entry.configs
           .map(
             (cfgItem) => `
@@ -2125,7 +2257,11 @@
         // literal text instead of rendering as the little "pool"/"static" pill.
         return `
           <div class="proxyip-item-head">
-            <span class="proxyip-item-host">${escapeHtml(`${entry.host} (${entry.ip})`)}${poolTag ?? ""}</span>
+            <div class="proxyip-item-host-group">
+              <input type="checkbox" class="proxyip-select" data-xray-link="${encodeURIComponent(xrayCfg?.link ?? "")}" data-sb-link="${encodeURIComponent(sbCfg?.link ?? "")}" aria-label="Select ${escapeHtml(entry.ip)} for bulk copy">
+              <span class="proxyip-index">${index}</span>
+              <span class="proxyip-item-host">${escapeHtml(`${entry.host} (${entry.ip})`)}${poolTag ?? ""}</span>
+            </div>
             <span class="badge ${badgeClass}">${escapeHtml(entry.score ?? "?")} - ${escapeHtml(entry.risk || "Unknown")}</span>
           </div>
           <div class="proxyip-item-configs">${configButtons}</div>
@@ -2138,52 +2274,73 @@
       // of their IPs - defaulting to the lowest-risk one (entries are
       // already sorted ascending by risk server-side) - and the copy
       // buttons update to that selection.
-      function renderProxyHostGroup(hostGroup) {
+      //
+      // `counter` is a single mutable { n } shared across the whole
+      // currently-rendered country list (see renderProxyIpCountry) so
+      // every individual IP - flat row or one option inside a domain's
+      // dropdown - gets one running "#1, #2, ..." index, not a index
+      // that resets per host group.
+      function renderProxyHostGroup(hostGroup, counter) {
         const poolTag = hostGroup.hostType === "domain" ?
           `<span class="pool-tag" title="Resolved from a domain that may back more IPs than shown">pool</span>` :
           `<span class="pool-tag" title="Fixed IP from the ProxyIP config">static</span>`;
 
         if (hostGroup.entries.length <= 1) {
           const entry = hostGroup.entries[0];
+          counter.n += 1;
           const div = document.createElement("div");
           div.className = "proxyip-item";
-          div.innerHTML = renderProxyEntryRow(entry, poolTag);
+          div.innerHTML = renderProxyEntryRow(entry, poolTag, counter.n);
           return div;
         }
 
         const div = document.createElement("div");
         div.className = "proxyip-item";
-        const options = hostGroup.entries
-          .map((entry, i) => `<option value="${i}">${escapeHtml(entry.ip)} · ${escapeHtml(entry.score ?? "?")} - ${escapeHtml(entry.risk || "Unknown")}</option>`)
+        // Custom checkbox-style options instead of a native <select>: the
+        // browser's own dropdown can only show one plain-text line per IP
+        // and only lets you pick one. Here every IP is its own toggle card
+        // showing its risk score/label right on the card (so it's visible
+        // without opening anything), and more than one can be expanded at
+        // once since a client app might want several fallback IPs.
+        const optionsHtml = hostGroup.entries
+          .map((entry, i) => {
+            const badgeClass = proxyRiskBadgeClass(entry.score);
+            const selected = i === 0; // lowest risk, since entries are pre-sorted ascending
+            const xrayCfg = entry.configs.find((c) => c.label === "Xray");
+            const sbCfg = entry.configs.find((c) => c.label === "Singbox");
+            const configButtons = entry.configs
+              .map(
+                (cfgItem) => `
+                  <button type="button" class="icon-btn" data-proxyip-link="${encodeURIComponent(cfgItem.link)}" aria-label="Copy ${escapeHtml(cfgItem.label)} config for ${escapeHtml(entry.ip)}">
+                    <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>${escapeHtml(cfgItem.label)}</span>
+                  </button>
+                `,
+              )
+              .join("");
+            counter.n += 1;
+            return `
+              <div class="proxyip-ip-option${selected ? " selected" : ""}">
+                <label class="proxyip-ip-toggle">
+                  <input type="checkbox" class="proxyip-select"${selected ? " checked" : ""} data-xray-link="${encodeURIComponent(xrayCfg?.link ?? "")}" data-sb-link="${encodeURIComponent(sbCfg?.link ?? "")}" aria-label="Select ${escapeHtml(entry.ip)} - shows its config and marks it for bulk copy">
+                  <span class="proxyip-index">${counter.n}</span>
+                  <span class="proxyip-ip-addr">${escapeHtml(entry.ip)}</span>
+                  <span class="badge ${badgeClass}">${escapeHtml(entry.score ?? "?")} - ${escapeHtml(entry.risk || "Unknown")}</span>
+                </label>
+                <div class="proxyip-ip-configs">${configButtons}</div>
+              </div>
+            `;
+          })
           .join("");
         div.innerHTML = `
           <div class="proxyip-item-head">
             <span class="proxyip-item-host">${escapeHtml(hostGroup.host)}${poolTag}</span>
           </div>
-          <select class="proxyip-host-select" aria-label="Choose an IP for ${escapeHtml(hostGroup.host)}">${options}</select>
-          <div class="proxyip-item-configs"></div>
+          <div class="proxyip-ip-options">${optionsHtml}</div>
         `;
-        const select = div.querySelector(".proxyip-host-select");
-        const configsEl = div.querySelector(".proxyip-item-configs");
-        const renderSelected = () => {
-          const entry = hostGroup.entries[Number(select.value)];
-          configsEl.innerHTML = entry.configs
-            .map(
-              (cfgItem) => `
-                <button type="button" class="icon-btn" data-proxyip-link="${encodeURIComponent(cfgItem.link)}" aria-label="Copy ${escapeHtml(cfgItem.label)} config for ${escapeHtml(entry.ip)}">
-                  <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                  <span>${escapeHtml(cfgItem.label)}</span>
-                </button>
-              `,
-            )
-            .join("");
-        };
-        select.value = "0"; // lowest-risk IP, since entries are pre-sorted ascending
-        select.addEventListener("change", renderSelected);
-        renderSelected();
         return div;
       }
 
@@ -2193,10 +2350,47 @@
         const group = groups.find((g) => g.country === countryName);
         if (!group || !group.hosts.length) {
           list.innerHTML = `<div class="proxyip-empty">No ProxyIPs found for this country.</div>`;
+          updateProxyBulkBar();
           return;
         }
         list.innerHTML = "";
-        group.hosts.forEach((hostGroup) => list.appendChild(renderProxyHostGroup(hostGroup)));
+        const counter = { n: 0 };
+        group.hosts.forEach((hostGroup) => list.appendChild(renderProxyHostGroup(hostGroup, counter)));
+        // Every render is a fresh set of checkboxes (all unchecked), so the
+        // bulk bar's count/buttons need resetting to match - otherwise a
+        // stale count could sit there pointing at elements that no longer
+        // exist after switching country or refreshing.
+        updateProxyBulkBar();
+      }
+
+      // Keeps the "N selected" label and the two bulk-copy buttons in sync
+      // with however many .proxyip-select checkboxes are currently ticked
+      // inside #proxyip-list. Called after every re-render and on every
+      // checkbox change.
+      function updateProxyBulkBar() {
+        const list = document.getElementById("proxyip-list");
+        const countEl = document.getElementById("proxyip-bulk-count");
+        const xrayBtn = document.getElementById("proxyip-bulk-copy-xray");
+        const sbBtn = document.getElementById("proxyip-bulk-copy-sb");
+        const checked = list ? list.querySelectorAll(".proxyip-select:checked").length : 0;
+        if (countEl) countEl.textContent = `${checked} selected`;
+        if (xrayBtn) xrayBtn.disabled = checked === 0;
+        if (sbBtn) sbBtn.disabled = checked === 0;
+      }
+
+      // Joins every checked entry's config (by data-xray-link or
+      // data-sb-link) into one newline-separated block and copies it -
+      // the same "flat list of vless:// links" shape as an /xray or /sb
+      // subscription, just limited to whatever the user hand-picked.
+      function copySelectedProxyConfigs(button, attr) {
+        const list = document.getElementById("proxyip-list");
+        if (!list) return;
+        const links = [...list.querySelectorAll(".proxyip-select:checked")]
+          .map((cb) => cb.getAttribute(attr))
+          .filter(Boolean)
+          .map((encoded) => decodeURIComponent(encoded));
+        if (!links.length) return;
+        copyToClipboard(button, links.join("\n"));
       }
 
       function renderProxyCountryButtons(groups, activeCountry, onSelect) {
@@ -2244,11 +2438,42 @@
           copyToClipboard(btn, link);
         });
 
-        const load = async () => {
+        // Same delegation approach for the per-row selection checkboxes -
+        // one listener covers every checkbox across every re-render. When
+        // the checkbox belongs to a domain group's IP option, it also
+        // drives that option's expand/collapse (the "selected" class) -
+        // one checkbox now does both jobs instead of two separate
+        // checkbox-shaped controls on the same row.
+        list.addEventListener("change", (e) => {
+          if (!e.target.classList.contains("proxyip-select")) return;
+          const option = e.target.closest(".proxyip-ip-option");
+          if (option) option.classList.toggle("selected", e.target.checked);
+          updateProxyBulkBar();
+        });
+
+        const bulkCopyXrayBtn = document.getElementById("proxyip-bulk-copy-xray");
+        const bulkCopySbBtn = document.getElementById("proxyip-bulk-copy-sb");
+        bulkCopyXrayBtn?.addEventListener("click", () => copySelectedProxyConfigs(bulkCopyXrayBtn, "data-xray-link"));
+        bulkCopySbBtn?.addEventListener("click", () => copySelectedProxyConfigs(bulkCopySbBtn, "data-sb-link"));
+
+        const load = async (forceRefresh = false) => {
           list.innerHTML = `<div class="proxyip-empty">Loading ProxyIPs…</div>`;
           bar.innerHTML = "";
+          const icon = refreshBtn?.querySelector(".refresh-icon");
+          if (refreshBtn) refreshBtn.disabled = true;
+          // Same spin-while-loading treatment as the "Refresh IP
+          // information" button above this card (see the
+          // "refresh-ip-info" click handler) - both refresh buttons
+          // should look and behave the same way while their fetch is in
+          // flight.
+          if (icon) icon.style.animation = "spin 1s linear infinite";
           try {
-            const res = await fetch(url);
+            // ?refresh=1 bypasses the worker's own response caches so a
+            // click on Refresh actually re-checks each domain's current
+            // IP set (see handleProxyIpsInfo in src/routes.js) instead of
+            // just re-fetching the same cached JSON as the initial load.
+            const fetchUrl = forceRefresh ? `${url}${url.includes("?") ? "&" : "?"}refresh=1` : url;
+            const res = await fetch(fetchUrl);
             if (!res.ok) throw new Error("Request failed");
             const data = await res.json();
             const groups = (data.groups || []).filter((g) => g.hosts && g.hosts.length);
@@ -2262,10 +2487,15 @@
           } catch (e) {
             console.error("ProxyIPs load failed:", e);
             list.innerHTML = `<div class="proxyip-empty">Could not load ProxyIPs. Try refreshing.</div>`;
+          } finally {
+            setTimeout(() => {
+              if (refreshBtn) refreshBtn.disabled = false;
+              if (icon) icon.style.animation = "";
+            }, 1000);
           }
         };
 
-        refreshBtn?.addEventListener("click", load);
+        refreshBtn?.addEventListener("click", () => load(true));
         await load();
       }
 
