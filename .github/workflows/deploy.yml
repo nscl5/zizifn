@@ -1,4 +1,4 @@
-name: ⚪ Deploy Worker (Multi-Account)
+name: ⚪ Deploy Worker
 
 on:
   push:
@@ -124,12 +124,19 @@ jobs:
       - name: ▶ Resolve account credentials (#${{ matrix.index }})
         id: account
         env:
-          API_TOKEN: ${{ secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
-          ACCOUNT_ID: ${{ secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
-          ACCOUNT_LABEL: ${{ vars[format('CLOUDFLARE_ACCOUNT_{0}_LABEL', matrix.index)] }}
+          API_TOKEN: ${{ matrix.index == 1 && secrets.CLOUDFLARE_API_TOKEN || secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
+          ACCOUNT_ID: ${{ matrix.index == 1 && secrets.CLOUDFLARE_ACCOUNT_ID || secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
+          ACCOUNT_LABEL: ${{ matrix.index == 1 && vars.CLOUDFLARE_ACCOUNT_LABEL || vars[format('CLOUDFLARE_ACCOUNT_{0}_LABEL', matrix.index)] }}
         run: |
           if [ -z "$API_TOKEN" ] || [ -z "$ACCOUNT_ID" ]; then
-            echo "::error::Account #${{ matrix.index }} is selected but its CLOUDFLARE_API_TOKEN_${{ matrix.index }} / CLOUDFLARE_ACCOUNT_ID_${{ matrix.index }} secrets aren't set."
+            if [ "${{ matrix.index }}" = "1" ]; then
+              TOKEN_NAME="CLOUDFLARE_API_TOKEN"
+              ID_NAME="CLOUDFLARE_ACCOUNT_ID"
+            else
+              TOKEN_NAME="CLOUDFLARE_API_TOKEN_${{ matrix.index }}"
+              ID_NAME="CLOUDFLARE_ACCOUNT_ID_${{ matrix.index }}"
+            fi
+            echo "::error::Account #${{ matrix.index }} is selected but its $TOKEN_NAME / $ID_NAME secrets aren't set."
             exit 1
           fi
           LABEL="${ACCOUNT_LABEL:-Account ${{ matrix.index }}}"
@@ -235,7 +242,7 @@ jobs:
       - name: ▶ Resolve worker name
         id: worker
         env:
-          SECRET_WORKERNAME: ${{ secrets[format('WORKERNAME_{0}', matrix.index)] }}
+          SECRET_WORKERNAME: ${{ matrix.index == 1 && secrets.WORKERNAME || secrets[format('WORKERNAME_{0}', matrix.index)] }}
         run: |
           DEFAULT_NAME=$(grep -m1 '^name' wrangler.toml | sed -E 's/name[[:space:]]*=[[:space:]]*"(.*)"/\1/')
           NAME="${{ inputs.workername }}"
@@ -259,8 +266,8 @@ jobs:
         id: deploy
         uses: cloudflare/wrangler-action@v4
         with:
-          apiToken: ${{ secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
-          accountId: ${{ secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
+          apiToken: ${{ matrix.index == 1 && secrets.CLOUDFLARE_API_TOKEN || secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
+          accountId: ${{ matrix.index == 1 && secrets.CLOUDFLARE_ACCOUNT_ID || secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
           command: deploy --name ${{ steps.worker.outputs.name }}
           vars: |
             UUID
