@@ -124,21 +124,56 @@ export async function handleIpSubscription(request, core, userID, hostName, ctx,
     }),
   );
 
-  // Top 10 lowest-risk ProxyIP configs, pulled from the same pool the
-  // ProxyIPs panel card uses (see buildProxyIpPool above). Each tag
-  // encodes country + whether that pool host is domain- or IP-backed;
-  // makeName() appends the transport (TLS/TCP) on top of that.
+  // ProxyIP configs, pulled from the same pool the ProxyIPs panel card
+  // uses (see buildProxyIpPool above). Each tag encodes country + whether
+  // that pool host is domain- or IP-backed; makeName() appends the
+  // transport (TLS/TCP) on top of that.
+  //
+  // Selection guarantees at least one config per country (the country's
+  // lowest-risk entry), then tops up with the next best-scored entries
+  // overall until at least 10 configs are included in total - so a
+  // country never drops out of the subscription just because its best IP
+  // didn't make an arbitrary top-10 cut.
+  //
+  // Each entry's port + TLS/TCP is picked at random via
+  // pickRandomProxyPort(), the same way the ProxyIPs panel card
+  // randomizes its own configs (see buildProxyEntryConfigs below) - so a
+  // subscription refresh doesn't hand back the exact same "port 443,
+  // TLS" pair for every entry, and TCP variants show up here too.
   if (cfg) {
     try {
       const pool = await buildProxyIpPool(cfg, ctx);
-      const top10 = [...pool].sort((a, b) => (a.score ?? 999) - (b.score ?? 999)).slice(0, 10);
-      top10.forEach((entry, i) => {
+      const sorted = [...pool].sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+
+      const selected = [];
+      const seenCountries = new Set();
+      for (const entry of sorted) {
+        const countryKey = entry.country || "Unknown";
+        if (!seenCountries.has(countryKey)) {
+          seenCountries.add(countryKey);
+          selected.push(entry);
+        }
+      }
+
+      const MIN_TOTAL = 10;
+      if (selected.length < MIN_TOTAL) {
+        const selectedIds = new Set(selected.map((e) => `${e.host}:${e.ip}`));
+        for (const entry of sorted) {
+          if (selected.length >= MIN_TOTAL) break;
+          const id = `${entry.host}:${entry.ip}`;
+          if (!selectedIds.has(id)) {
+            selected.push(entry);
+            selectedIds.add(id);
+          }
+        }
+      }
+      selected.sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+
+      selected.forEach((entry, i) => {
         const tag = proxyEntryTag(entry, i);
         const overrides = { proxyIP: `${entry.ip}:${entry.port}` };
-        links.push(buildLink({ core, proto: "tls", userID, hostName, address: hostName, port: 443, tag, enhanced, overrides }));
-        if (includeTcp) {
-          links.push(buildLink({ core, proto: "tcp", userID, hostName, address: hostName, port: 80, tag, enhanced, overrides }));
-        }
+        const { proto, port } = pickRandomProxyPort(isPagesDeployment);
+        links.push(buildLink({ core, proto, userID, hostName, address: hostName, port, tag, enhanced, overrides }));
       });
     } catch (e) {
       console.error("ProxyIP pool for subscription failed", e);
