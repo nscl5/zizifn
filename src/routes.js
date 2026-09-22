@@ -11,12 +11,15 @@ import {
   resolveIPv4ViaDoH,
   fetchDomainIpPool,
   countryCodeToFlagEmoji,
+  cacheGetJson,
+  cachePutJson,
+  pickRandomProxyPort,
 } from "./core.js";
 import panelB64 from "./panel.b64";
 const panelBytes = Uint8Array.from(atob(panelB64), (c) => c.charCodeAt(0));
 const panelHtml = new TextDecoder("utf-8").decode(panelBytes);
 
-export async function handleIpSubscription(request, core, userID, hostName, ctx, enhanced = false, cfg = null) {
+export async function handleIpSubscription(request, core, userID, hostName, ctx, enhanced = false, cfg = null, env = null) {
   const url = new URL(request.url);
   const subName = url.searchParams.get("name");
 
@@ -218,18 +221,55 @@ export async function handleResolveDomain(request) {
   }
 }
 
+// Backs the "Proxy Server" info panel. Used to be two client-side round
+// trips (GET /resolve-domain, then the browser itself calling
+// https://ipapi.co/...) - meaning that second lookup ran from the
+// visitor's own IP/browser, not the worker's. This does the DNS
+// resolution + geolocation server-side instead, in one call, reusing the
+// same Cache-API-backed per-IP cache as the ProxyIPs pool.
+export async function handleProxyHostInfo(request, env, ctx) {
+  const url = new URL(request.url);
+  const host = url.searchParams.get("host");
+  const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
+  if (!host) return new Response(JSON.stringify({ error: true, reason: "Missing host" }), { status: 400, headers });
+
+  try {
+    let ip = host;
+    if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) {
+      const resolved = await resolveIPv4ViaDoH(host);
+      if (!resolved) return new Response(JSON.stringify({ error: true, reason: "Could not resolve host" }), { headers });
+      ip = resolved;
+    }
+    const meta = await getIpMeta(ctx, ip);
+    return new Response(
+      JSON.stringify({
+        ip,
+        city: meta.city || "",
+        country_name: meta.country,
+        country_code: meta.countryCode,
+        org: meta.org || "",
+      }),
+      { headers },
+    );
+  } catch (error) {
+    return new Response(JSON.stringify({ error: true, reason: error.toString() }), { headers });
+  }
+}
+
 async function geolocateIp(ip) {
   try {
     const res = await safeFetch(`https://ipapi.co/${ip}/json/`, {}, 4000);
-    if (!res.ok) return { country: "Unknown", countryCode: "" };
+    if (!res.ok) return { country: "Unknown", countryCode: "", city: "", org: "" };
     const data = await res.json();
-    if (data.error) return { country: "Unknown", countryCode: "" };
+    if (data.error) return { country: "Unknown", countryCode: "", city: "", org: "" };
     return {
       country: data.country_name || "Unknown",
       countryCode: (data.country_code || "").toLowerCase(),
+      city: data.city || "",
+      org: data.org || "",
     };
   } catch (e) {
-    return { country: "Unknown", countryCode: "" };
+    return { country: "Unknown", countryCode: "", city: "", org: "" };
   }
 }
 
@@ -260,54 +300,99 @@ async function fetchIpRisk(ip) {
   return { score: threatScore, risk };
 }
 
+// Cache-API-backed cache for a single IP's geo+risk lookup (6h TTL, same
+// as the pool cache below). A later refresh within that window reuses
+// it instead of re-hitting ipapi.co/harmonica, which is both what keeps
+// the panel from silently losing already-known IPs on refresh and what
+// keeps it from re-tripping those services' rate limits every time. A
+// failed/"Unknown" lookup is deliberately NOT cached, so the next
+// refresh gets to retry it rather than being stuck with "Unknown"
+// forever. Unlike a KV-backed cache, this expires on its own - so an IP
+// that was only ever seen because a user typed in a wrong/malicious
+// ProxyIP domain ages back out instead of leaving bad data around
+// indefinitely for whoever looks that IP up next.
+async function getIpMeta(ctx, ip) {
+  const cacheKey = `ipmeta:${ip}`;
+  const cached = await cacheGetJson(cacheKey);
+  if (cached) return cached;
+  const [geo, riskInfo] = await Promise.all([geolocateIp(ip), fetchIpRisk(ip)]);
+  const meta = { ...geo, ...riskInfo };
+  if (meta.country && meta.country !== "Unknown") await cachePutJson(ctx, cacheKey, meta);
+  return meta;
+}
+
+// Same idea as getIpMeta, but for a batch of entries that already came
+// back WITH geo/risk data attached (fetchDomainIpPool's response) - an
+// already-cached IP's stored data wins over whatever this particular
+// response says, so a domain's IPs stay stable across refreshes even if
+// the upstream pool API's answer for one of them jitters or degrades.
+async function enrichWithPersistentCache(ctx, entries) {
+  return Promise.all(
+    entries.map(async (entry) => {
+      const cacheKey = `ipmeta:${entry.ip}`;
+      const cached = await cacheGetJson(cacheKey);
+      if (cached) return { ...entry, ...cached };
+      if (entry.country && entry.country !== "Unknown") await cachePutJson(ctx, cacheKey, entry);
+      return entry;
+    }),
+  );
+}
+
 // Resolves one ProxyIP pool host into its enriched entries. A literal IP
-// host is just itself (single geolocate + risk lookup). A domain host
-// goes through fetchDomainIpPool, which mirrors the domain's whole IP
-// pool — with risk + geo already attached — in one (slow-ish) call; if
-// that service is down we fall back to a single DoH A-record lookup so
-// the feature still degrades gracefully instead of failing outright.
-async function resolveProxyPoolHost(host, port) {
+// host is just itself (single geolocate + risk lookup, cached). A
+// domain host goes through fetchDomainIpPool, which mirrors the domain's
+// whole current IP set - with risk + geo already attached - in one call;
+// if that service is down we fall back to a single DoH A-record lookup
+// so the feature still degrades gracefully instead of failing outright.
+// Note this always re-resolves which IPs currently back the host (so an
+// IP removed from the domain naturally stops appearing); only the
+// per-IP geo/risk metadata is cached, via getIpMeta/enrichWithPersistentCache.
+async function resolveProxyPoolHost(host, port, ctx) {
   const isIPHost = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
 
   if (isIPHost) {
     if (isInIgnoredRange(host)) return [];
-    const [geo, riskInfo] = await Promise.all([geolocateIp(host), fetchIpRisk(host)]);
-    return [{ host, port, ip: host, hostType: "ip", ...geo, ...riskInfo }];
+    const meta = await getIpMeta(ctx, host);
+    return [{ host, port, ip: host, hostType: "ip", ...meta }];
   }
 
   let pool = await fetchDomainIpPool(host);
   if (!pool.length) {
     const single = await resolveIPv4ViaDoH(host);
     if (single) {
-      const [geo, riskInfo] = await Promise.all([geolocateIp(single), fetchIpRisk(single)]);
-      pool = [{ ip: single, ...geo, ...riskInfo }];
+      const meta = await getIpMeta(ctx, single);
+      pool = [{ ip: single, ...meta }];
     }
   }
 
-  return pool
-    .filter((p) => p.ip && !isInIgnoredRange(p.ip))
-    .map((p) => ({
-      host,
-      port,
-      ip: p.ip,
-      hostType: "domain",
-      country: p.country,
-      countryCode: p.countryCode,
-      score: p.score,
-      risk: p.risk,
-    }));
+  pool = pool.filter((p) => p.ip && !isInIgnoredRange(p.ip));
+  pool = await enrichWithPersistentCache(ctx, pool);
+
+  return pool.map((p) => ({
+    host,
+    port,
+    ip: p.ip,
+    hostType: "domain",
+    country: p.country,
+    countryCode: p.countryCode,
+    score: p.score,
+    risk: p.risk,
+  }));
 }
 
 // Resolves every host in the configured ProxyIP pool (never the worker's
-// own domain — that's the client entry point, not a ProxyIP) to its
+// own domain - that's the client entry point, not a ProxyIP) to its
 // backing IPv4 address(es), each already carrying country + risk info.
 // Pool hosts are resolved in parallel (each can itself involve a slow
-// upstream call), and the flattened, enriched result is cached for 6h
-// so both the panel card and the subscription builder share one lookup.
-async function buildProxyIpPool(cfg, ctx) {
+// upstream call), and the flattened, enriched result is cached for 6h so
+// both the panel card and the subscription builder share one lookup -
+// unless forceRefresh is set (the panel's Refresh button), which skips
+// straight to re-resolving every host's CURRENT IP set while still
+// reusing already-known per-IP geo/risk data via the Cache API above.
+async function buildProxyIpPool(cfg, ctx, forceRefresh = false) {
   const cache = caches.default;
   const poolCacheKey = new Request("https://cf-proxyip-pool-cache.local");
-  if (ctx) {
+  if (ctx && !forceRefresh) {
     const cachedRes = await cache.match(poolCacheKey);
     if (cachedRes) return cachedRes.json();
   }
@@ -324,7 +409,7 @@ async function buildProxyIpPool(cfg, ctx) {
       return true;
     });
 
-  const results = (await Promise.all(hosts.map(({ host, port }) => resolveProxyPoolHost(host, port)))).flat();
+  const results = (await Promise.all(hosts.map(({ host, port }) => resolveProxyPoolHost(host, port, ctx)))).flat();
 
   if (ctx && results.length) {
     const cacheResponse = new Response(JSON.stringify(results), {
@@ -351,26 +436,35 @@ function proxyEntryTag(entry, index) {
 // pool entry, tagged the same way the /xray and /sb subscriptions tag
 // their own top-10 ProxyIP configs (see proxyEntryTag above), so a name
 // like "🇺🇸US-IP-1-TLS" means the same thing everywhere it shows up.
+//
+// The client-facing port+transport (NOT the proxyIP override, which
+// stays entry.ip:entry.port) is randomized per config, per call - so a
+// refresh doesn't hand back the exact same "port 443, TLS" pair for
+// every single entry. See pickRandomProxyPort() in core.js for why
+// *.pages.dev only ever gets a TLS port back.
 function buildProxyEntryConfigs(entry, hostName, userID, index) {
   const tag = proxyEntryTag(entry, index);
   const proxyIP = `${entry.ip}:${entry.port}`;
+  const isPagesDeployment = hostName.endsWith(".pages.dev");
+  const xrayPort = pickRandomProxyPort(isPagesDeployment);
+  const sbPort = pickRandomProxyPort(isPagesDeployment);
   const xray = buildLink({
     core: "xray",
-    proto: "tls",
+    proto: xrayPort.proto,
     userID,
     hostName,
     address: hostName,
-    port: 443,
+    port: xrayPort.port,
     tag,
     overrides: { proxyIP },
   });
   const sb = buildLink({
     core: "sb",
-    proto: "tls",
+    proto: sbPort.proto,
     userID,
     hostName,
     address: hostName,
-    port: 443,
+    port: sbPort.port,
     tag,
     overrides: { proxyIP },
   });
@@ -398,7 +492,7 @@ function buildProxyEntryConfigs(entry, hostName, userID, index) {
 // `proxyip=` override (see withConfigOverrides / core.js and
 // parsePathOverrides / network.js) so that IP becomes that config's sole
 // fallback route.
-export async function handleProxyIpsInfo(request, cfg, hostName, ctx) {
+export async function handleProxyIpsInfo(request, cfg, hostName, ctx, env) {
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -406,12 +500,23 @@ export async function handleProxyIpsInfo(request, cfg, hostName, ctx) {
   };
 
   try {
+    const url = new URL(request.url);
+    // The panel's Refresh button sends ?refresh=1 to bypass both response
+    // caches below and re-resolve every pool host's CURRENT IP set (so an
+    // IP a domain no longer resolves to drops off, and a newly-added one
+    // shows up) - see buildProxyIpPool. Already-known IPs still don't
+    // re-hit ipapi.co/harmonica though: that's what the
+    // getIpMeta/enrichWithPersistentCache cache in buildProxyIpPool is for.
+    const forceRefresh = url.searchParams.get("refresh") === "1";
+
     const cache = caches.default;
     const cacheKey = new Request(`https://cf-proxyips-cache.local/${hostName}`);
-    const cached = await cache.match(cacheKey);
-    if (cached) return cached;
+    if (!forceRefresh) {
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+    }
 
-    const enriched = await buildProxyIpPool(cfg, ctx);
+    const enriched = await buildProxyIpPool(cfg, ctx, forceRefresh);
 
     const countryMap = new Map();
     enriched.forEach((entry) => {
