@@ -1144,6 +1144,13 @@
         flex-wrap: wrap;
         gap: 6px;
         margin-bottom: 8px;
+        /* Flex items default to min-width:auto, which lets a single long
+           label force this whole row wider than the card and spill past
+           its right edge instead of wrapping to a new row like the rest -
+           min-width:0 lets flex-wrap actually do its job. Sorting the
+           buttons shortest-name-first (see renderProxyCountryButtons) is
+           the main fix; this is just a safety net. */
+        min-width: 0;
       }
 
       .proxyip-country-btn {
@@ -1159,6 +1166,10 @@
         font-size: 11px;
         cursor: pointer;
         transition: background-color var(--transition), border-color var(--transition), color var(--transition);
+      }
+
+      .proxyip-country-btn .country-name {
+        white-space: nowrap;
       }
 
       .proxyip-country-btn:hover {
@@ -1230,14 +1241,6 @@
         text-align: right;
       }
 
-      .proxyip-item-host-group {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
-        flex: 1;
-      }
-
       .proxyip-ip-options {
         display: flex;
         flex-direction: column;
@@ -1286,9 +1289,7 @@
            match the old layout. */
         padding: 8px;
         /* Distinct from .icon-btn's own background (--bgColor-overlay) so
-           the copy buttons don't visually blend into their own container -
-           see .proxyip-item-configs .icon-btn below for the matching fix
-           on the single-IP layout. */
+           the copy buttons don't visually blend into their own container. */
         background: var(--bgColor-inset);
         border-top: 1px solid var(--borderColor-muted);
       }
@@ -1305,16 +1306,6 @@
         min-height: 0;
         max-height: 360px;
         overflow-y: auto;
-      }
-
-      .proxyip-item-host .pool-tag {
-        font-family: var(--font-sans, inherit);
-        font-size: 10px;
-        color: var(--fgColor-muted);
-        border: 1px solid var(--borderColor-muted);
-        border-radius: var(--radius-sm);
-        padding: 0 4px;
-        margin-inline-start: 4px;
       }
 
       .proxyip-item {
@@ -1345,32 +1336,22 @@
         color: var(--fgColor-default);
       }
 
-      .proxyip-item-configs {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px;
-      }
-
-      .proxyip-item-configs .icon-btn,
       .proxyip-ip-configs .icon-btn {
         width: 100%;
         gap: 5px;
         font-size: 11px;
       }
 
-      /* Both copy-config button locations (single-IP row and the
-         expanded multi-IP dropdown) sit on --bgColor-inset containers,
-         so give them their own lighter fill + accent-tinted border -
+      /* The copy-config buttons sit on a --bgColor-inset container, so
+         give them their own lighter fill + accent-tinted border -
          otherwise they read as flat/illegible against the surrounding
          card instead of as clickable buttons. */
-      .proxyip-item-configs .icon-btn,
       .proxyip-ip-configs .icon-btn {
         background: var(--bgColor-muted);
         border-color: var(--borderColor-default);
         color: var(--fgColor-default);
       }
 
-      .proxyip-item-configs .icon-btn:hover,
       .proxyip-ip-configs .icon-btn:hover {
         background: var(--accent-muted);
         border-color: var(--accent-emphasis);
@@ -2235,65 +2216,20 @@
         return String.fromCodePoint(...points);
       }
 
-      function renderProxyEntryRow(entry, poolTag, index) {
-        const badgeClass = proxyRiskBadgeClass(entry.score);
-        const xrayCfg = entry.configs.find((c) => c.label === "Xray");
-        const sbCfg = entry.configs.find((c) => c.label === "Singbox");
-        const configButtons = entry.configs
-          .map(
-            (cfgItem) => `
-              <button type="button" class="icon-btn" data-proxyip-link="${encodeURIComponent(cfgItem.link)}" aria-label="Copy ${escapeHtml(cfgItem.label)} config for ${escapeHtml(entry.ip)}">
-                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span>${escapeHtml(cfgItem.label)}</span>
-              </button>
-            `,
-          )
-          .join("");
-        // poolTag is trusted markup we built ourselves (see renderProxyHostGroup)
-        // and must NOT be run through escapeHtml, or the <span> gets shown as
-        // literal text instead of rendering as the little "pool"/"static" pill.
-        return `
-          <div class="proxyip-item-head">
-            <div class="proxyip-item-host-group">
-              <input type="checkbox" class="proxyip-select" data-xray-link="${encodeURIComponent(xrayCfg?.link ?? "")}" data-sb-link="${encodeURIComponent(sbCfg?.link ?? "")}" aria-label="Select ${escapeHtml(entry.ip)} for bulk copy">
-              <span class="proxyip-index">${index}</span>
-              <span class="proxyip-item-host">${escapeHtml(`${entry.host} (${entry.ip})`)}${poolTag ?? ""}</span>
-            </div>
-            <span class="badge ${badgeClass}">${escapeHtml(entry.score ?? "?")} - ${escapeHtml(entry.risk || "Unknown")}</span>
-          </div>
-          <div class="proxyip-item-configs">${configButtons}</div>
-        `;
-      }
-
-      // A pool host (usually a domain) can back several IPs. Rather than
-      // list every one of them as an indistinguishable flat row, hosts
-      // with more than one resolved IP get a single card with a <select>
-      // of their IPs - defaulting to the lowest-risk one (entries are
-      // already sorted ascending by risk server-side) - and the copy
-      // buttons update to that selection.
+      // Every host - whether it's a single fixed IP or a domain that
+      // resolved to several IPs - gets the same card shape: the host on
+      // its own header line, and its IP(s) listed below as one or more
+      // toggleable options (defaulting to the lowest-risk one, since
+      // entries are already sorted ascending by risk server-side). That
+      // keeps countries with only one ProxyIP visually consistent with
+      // countries that have many, instead of the single-IP case getting
+      // a flattened one-line layout of its own.
       //
       // `counter` is a single mutable { n } shared across the whole
       // currently-rendered country list (see renderProxyIpCountry) so
-      // every individual IP - flat row or one option inside a domain's
-      // dropdown - gets one running "#1, #2, ..." index, not a index
-      // that resets per host group.
+      // every individual IP - across every host card - gets one running
+      // "#1, #2, ..." index, not an index that resets per host group.
       function renderProxyHostGroup(hostGroup, counter) {
-        const poolTag = hostGroup.hostType === "domain" ?
-          `<span class="pool-tag" title="Resolved from a domain that may back more IPs than shown">pool</span>` :
-          `<span class="pool-tag" title="Fixed IP from the ProxyIP config">static</span>`;
-
-        if (hostGroup.entries.length <= 1) {
-          const entry = hostGroup.entries[0];
-          counter.n += 1;
-          const div = document.createElement("div");
-          div.className = "proxyip-item";
-          div.innerHTML = renderProxyEntryRow(entry, poolTag, counter.n);
-          return div;
-        }
-
         const div = document.createElement("div");
         div.className = "proxyip-item";
         // Custom checkbox-style options instead of a native <select>: the
@@ -2337,7 +2273,7 @@
           .join("");
         div.innerHTML = `
           <div class="proxyip-item-head">
-            <span class="proxyip-item-host">${escapeHtml(hostGroup.host)}${poolTag}</span>
+            <span class="proxyip-item-host">${escapeHtml(hostGroup.host)}</span>
           </div>
           <div class="proxyip-ip-options">${optionsHtml}</div>
         `;
@@ -2396,16 +2332,23 @@
       function renderProxyCountryButtons(groups, activeCountry, onSelect) {
         const bar = document.getElementById("proxyip-country-buttons");
         if (!bar) return;
-        // Server already sorts groups "country - risk, ascending" (lowest
-        // overall-risk country first); buttons are rendered in that order.
-        bar.innerHTML = groups
+        // Server sorts `groups` itself "country - risk, ascending" (lowest
+        // overall-risk country first) - that order still drives which
+        // country is selected by default (see initialCountry above). Here,
+        // for display only, a separate copy is sorted shortest-name-first:
+        // packing short pills ("UAE"-length names) before long ones
+        // ("United Arab Emirates") wraps far more evenly, so a lone long
+        // label doesn't end up stranded on its own row pushing the card
+        // wider than the one next to it.
+        const byNameLength = [...groups].sort((a, b) => a.country.length - b.country.length);
+        bar.innerHTML = byNameLength
           .map((g) => {
             const flag = g.flag || countryFlagEmoji(g.countryCode) || "🏳️";
             const riskHint = g.lowestScore != null ? `${escapeHtml(g.lowestScore)} - ${escapeHtml(g.lowestRisk)}` : "no score";
             return `
-              <button type="button" class="proxyip-country-btn${g.country === activeCountry ? " active" : ""}" data-country="${escapeHtml(g.country)}">
+              <button type="button" class="proxyip-country-btn${g.country === activeCountry ? " active" : ""}" data-country="${escapeHtml(g.country)}" title="${escapeHtml(g.country)}">
                 <span class="flag">${flag}</span>
-                <span>${escapeHtml(g.country)}</span>
+                <span class="country-name">${escapeHtml(g.country)}</span>
                 <span class="risk-hint">${riskHint}</span>
               </button>
             `;
