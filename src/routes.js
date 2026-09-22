@@ -241,13 +241,15 @@ export async function handleProxyHostInfo(request, env, ctx) {
       ip = resolved;
     }
     const meta = await getIpMeta(ctx, ip);
+    const orgOrIsp = meta.org || meta.isp || "";
     return new Response(
       JSON.stringify({
         ip,
         city: meta.city || "",
-        country_name: meta.country,
-        country_code: meta.countryCode,
-        org: meta.org || "",
+        country_name: meta.country || "Unknown",
+        country_code: meta.countryCode || "",
+        org: orgOrIsp,
+        isp: meta.isp || orgOrIsp,
       }),
       { headers },
     );
@@ -257,25 +259,75 @@ export async function handleProxyHostInfo(request, env, ctx) {
 }
 
 async function geolocateIp(ip) {
+  const headers = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    Accept: "application/json",
+  };
+
+  // Provider 1: ip-api.com
   try {
-    const res = await safeFetch(`https://ipapi.co/${ip}/json/`, {}, 4000);
-    if (!res.ok) return { country: "Unknown", countryCode: "", city: "", org: "" };
-    const data = await res.json();
-    if (data.error) return { country: "Unknown", countryCode: "", city: "", org: "" };
-    return {
-      country: data.country_name || "Unknown",
-      countryCode: (data.country_code || "").toLowerCase(),
-      city: data.city || "",
-      org: data.org || "",
-    };
-  } catch (e) {
-    return { country: "Unknown", countryCode: "", city: "", org: "" };
-  }
+    const res = await safeFetch(`http://ip-api.com/json/${ip}`, { headers }, 4000);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.status === "success") {
+        return {
+          country: data.country || "Unknown",
+          countryCode: (data.countryCode || "").toLowerCase(),
+          city: data.city || "",
+          org: data.org || data.isp || "",
+          isp: data.isp || data.org || "",
+        };
+      }
+    }
+  } catch (e) {}
+
+  // Provider 2: ipwho.is
+  try {
+    const res = await safeFetch(`https://ipwho.is/${ip}`, { headers }, 4000);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success) {
+        return {
+          country: data.country || "Unknown",
+          countryCode: (data.country_code || "").toLowerCase(),
+          city: data.city || "",
+          org: data.connection?.org || data.connection?.isp || "",
+          isp: data.connection?.isp || data.connection?.org || "",
+        };
+      }
+    }
+  } catch (e) {}
+
+  // Provider 3: ipapi.co
+  try {
+    const res = await safeFetch(`https://ipapi.co/${ip}/json/`, { headers }, 4000);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && !data.error) {
+        return {
+          country: data.country_name || "Unknown",
+          countryCode: (data.country_code || "").toLowerCase(),
+          city: data.city || "",
+          org: data.org || data.asn || "",
+          isp: data.org || data.asn || "",
+        };
+      }
+    }
+  } catch (e) {}
+
+  return { country: "Unknown", countryCode: "", city: "", org: "", isp: "" };
 }
 
 async function fetchIpRisk(ip) {
   let threatScore = 0;
   let risk = "Unknown";
+  let country = "Unknown";
+  let countryCode = "";
+  let city = "";
+  let isp = "";
+  let org = "";
+
   try {
     const res = await safeFetch(
       `https://api.harmonica.workers.dev/api/${ip}`,
@@ -294,10 +346,18 @@ async function fetchIpRisk(ip) {
         const targetObj = data.info || data;
         threatScore = targetObj.score ?? targetObj.fraud_score ?? targetObj.threatScore ?? 0;
         if (targetObj.risk) risk = targetObj.risk.charAt(0).toUpperCase() + targetObj.risk.slice(1);
+
+        if (data.details) {
+          country = data.details.country || "Unknown";
+          countryCode = (data.details.country_code || "").toLowerCase();
+          city = data.details.city || "";
+          isp = data.details.isp || "";
+          org = data.details.organization || data.details.org || "";
+        }
       }
     }
   } catch (e) {}
-  return { score: threatScore, risk };
+  return { score: threatScore, risk, country, countryCode, city, isp, org };
 }
 
 // Cache-API-backed cache for a single IP's geo+risk lookup (6h TTL, same
@@ -316,7 +376,20 @@ async function getIpMeta(ctx, ip) {
   const cached = await cacheGetJson(cacheKey);
   if (cached) return cached;
   const [geo, riskInfo] = await Promise.all([geolocateIp(ip), fetchIpRisk(ip)]);
-  const meta = { ...geo, ...riskInfo };
+  const country = (geo.country && geo.country !== "Unknown") ? geo.country : (riskInfo.country || "Unknown");
+  const countryCode = geo.countryCode || riskInfo.countryCode || "";
+  const city = geo.city || riskInfo.city || "";
+  const isp = geo.isp || riskInfo.isp || geo.org || riskInfo.org || "";
+  const org = geo.org || riskInfo.org || geo.isp || riskInfo.isp || "";
+  const meta = {
+    ...geo,
+    ...riskInfo,
+    country,
+    countryCode,
+    city,
+    isp,
+    org,
+  };
   if (meta.country && meta.country !== "Unknown") await cachePutJson(ctx, cacheKey, meta);
   return meta;
 }
