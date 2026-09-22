@@ -2,7 +2,60 @@ import { connect } from "cloudflare:sockets";
 import { processHeader } from "../pkg/zr_wasm.js";
 import { CONST, safeFetch } from "./core.js";
 
+const IPV4_REGEX = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+// Resolve a hostname to an IPv4 address via DNS-over-HTTPS.
+// Returns the input unchanged if it is already an IPv4 literal.
+async function resolveIPv4(hostname) {
+  if (IPV4_REGEX.test(hostname)) return hostname;
+  try {
+    const resp = await safeFetch(
+      `https://1.1.1.1/dns-query?name=${encodeURIComponent(hostname)}&type=A`,
+      { headers: { accept: "application/dns-json" } },
+      4000,
+    );
+    const data = await resp.json();
+    const answer = (data.Answer || []).find((a) => a.type === 1);
+    return answer ? answer.data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Build the NAT64 IPv6 literal (64:ff9b::/96) that Cloudflare
+// translates back to the given IPv4 address on egress.
+function toNAT64Address(ipv4) {
+  if (!ipv4 || !IPV4_REGEX.test(ipv4)) return null;
+  const octets = ipv4.split(".").map(Number);
+  if (octets.some((n) => n < 0 || n > 255)) return null;
+  const hex = octets.map((n) => n.toString(16).padStart(2, "0"));
+  return `64:ff9b::${hex[0]}${hex[1]}:${hex[2]}${hex[3]}`;
+}
+
+// Case-insensitive parser for optional per-connection overrides carried
+// in the ws path/query (e.g. ?nat64=on&proxyip=1.2.3.4:443, in any
+// letter-case). Lets a single config switch its own proxyIP or turn
+// NAT64 off without touching the worker's environment variables.
+function parsePathOverrides(url) {
+  const overrides = {};
+  for (const [rawKey, rawValue] of url.searchParams) {
+    const key = rawKey.toLowerCase();
+    if (key === "nat64") {
+      overrides.nat64 = rawValue.toLowerCase() === "on";
+    } else if (key === "proxyip" || key === "proxyips") {
+      overrides.proxyPool = rawValue
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+  return overrides;
+}
+
 export async function ProtocolOverWSHandler(request, config) {
+  const overrides = parsePathOverrides(new URL(request.url));
+  config = { ...config, ...overrides };
+
   const webSocketPair = new WebSocketPair();
   const [client, webSocket] = Object.values(webSocketPair);
   webSocket.accept();
@@ -99,7 +152,7 @@ async function HandleTCPOutBound(
 
   async function retryWithPool(pool, index) {
     if (index >= pool.length) {
-      safeCloseWebSocket(webSocket);
+      await retryWithNAT64();
       return;
     }
     const [proxyHost, proxyPort = "443"] = pool[index].split(":");
@@ -114,6 +167,29 @@ async function HandleTCPOutBound(
       () => retryWithPool(pool, index + 1),
       log,
     );
+  }
+
+  // Last-resort fallback: no proxyIP worked (or none was configured),
+  // so translate the real destination into a NAT64 IPv6 address and
+  // let Cloudflare's own NAT64 gateway do the address translation.
+  async function retryWithNAT64() {
+    if (config.nat64 === false) {
+      safeCloseWebSocket(webSocket);
+      return;
+    }
+    const ipv4 = await resolveIPv4(addressRemote);
+    const nat64Address = toNAT64Address(ipv4);
+    if (!nat64Address) {
+      log(`NAT64 fallback failed: could not resolve ${addressRemote}`);
+      safeCloseWebSocket(webSocket);
+      return;
+    }
+    log(`falling back to NAT64: ${nat64Address}`);
+    const tcpSocket = await connectAndWrite(nat64Address, portRemote);
+    tcpSocket.closed
+      .catch((error) => console.log("NAT64 tcpSocket closed error", error))
+      .finally(() => safeCloseWebSocket(webSocket));
+    RemoteSocketToWS(tcpSocket, webSocket, protocolResponseHeader, null, log);
   }
 
   const tcpSocket = await connectAndWrite(addressRemote, portRemote);
