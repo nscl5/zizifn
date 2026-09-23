@@ -43,21 +43,21 @@ on:
         required: false
         type: choice
         options:
-          - "off"
-          - "smart"
-          - "region"
-          - "host"
-          - "hostname"
-        default: "off"
+          - off
+          - smart
+          - region
+          - host
+          - hostname
+        default: off
       placement_provider:
         description: "Only used when placement_mode = region: cloud provider"
         required: false
         type: choice
         options:
-          - "aws"
-          - "gcp"
-          - "azure"
-        default: "aws"
+          - aws
+          - gcp
+          - azure
+        default: aws
       placement_region:
         description: "Only used when placement_mode = region: region code, e.g. us-east-1 (aws) / us-east4 (gcp) / westeurope (azure)"
         required: false
@@ -73,7 +73,8 @@ on:
 
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
     steps:
@@ -110,18 +111,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     steps:
-      - name: ▶ Checkout code
+      - name: ▶Checkout code
         uses: actions/checkout@v7
 
-      - name: ▶ Install Rust
+      - name: ▶Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: ▶ Install wasm-pack
+      - name: ▶Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: ▶ Resolve account credentials (#${{ matrix.index }})
+      - name: ▶Resolve account credentials (#${{ matrix.index }})
         id: account
         env:
           API_TOKEN: ${{ matrix.index == 1 && secrets.CLOUDFLARE_API_TOKEN || secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
@@ -317,5 +319,5 @@ jobs:
             echo "→ **${{ steps.worker.outputs.name }}**"
             echo "→ Settings → Variables and Secrets"
             echo ""
-            echo "💡 [Open Cloudflare Dashboard](https://dash.cloudflare.com/?to=/:account/workers-and-pages)"
+            echo "💡 [Open Cloudflare Dashboard](https://dash.cloudflare.com/?to=/:account/workers/services/view/${{ steps.worker.outputs.name }}/production/settings)"
           } >> "$GITHUB_STEP_SUMMARY"
