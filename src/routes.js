@@ -441,6 +441,7 @@ function buildProxyEntryConfigs(entry, hostName, userID, index) {
     address: hostName,
     port: xrayPort.port,
     tag,
+    enhanced: true,
     overrides: { proxyIP },
   });
   const sb = buildLink({
