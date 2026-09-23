@@ -1,13 +1,12 @@
 <!doctype html>
 <html lang="en">
-
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0d1117" />
     <title>VLESS Proxy Configuration</title>
-    <link rel="icon" href="https://pub-b3ab4c8172fb44e29854df3435aa223d.r2.dev/raven.png" type="image/png">
+    <link rel="icon" href="https://pub-b3ab4c8172fb44e29854df3435aa223d.r2.dev/REvil.svg" type="image/svg" />
     <style>
       :root {
         --fgColor-default: #e6edf3;
@@ -36,7 +35,8 @@
         --font-sans:
           -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif,
           "Apple Color Emoji", "Segoe UI Emoji";
-        --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+        --font-mono:
+          ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
         --transition: 100ms ease;
       }
 
@@ -133,7 +133,7 @@
         color: var(--fgColor-default);
       }
 
-      .config-title>span {
+      .config-title > span {
         min-width: 0;
       }
 
@@ -898,51 +898,6 @@
         border-color: var(--borderColor-default);
       }
 
-      @media (max-width: 640px) {
-        .fragment-toolbar {
-          grid-template-columns: 1fr;
-        }
-
-        .fragment-node-body {
-          grid-template-columns: 1fr;
-        }
-
-        .fragment-field.full {
-          grid-column: auto;
-        }
-
-        .fragment-footer {
-          align-items: stretch;
-          flex-direction: column;
-        }
-
-        .fragment-fingerprint {
-          justify-content: space-between;
-        }
-
-        .fragment-reset {
-          width: 100%;
-        }
-      }
-
-      @media (max-width: 420px) {
-        .fragment-status {
-          display: none;
-        }
-
-        .fragment-heading-text span {
-          font-size: 10px;
-        }
-
-        .fragment-presets {
-          grid-template-columns: 1fr;
-        }
-
-        .fragment-view-toggle {
-          justify-content: center;
-        }
-      }
-
       .ip-info-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1049,7 +1004,6 @@
         border-color: rgba(88, 166, 255, 0.3);
       }
 
-      /* --- NAT64 / ProxyIPs row --- */
       .cards-row {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1097,7 +1051,9 @@
         align-items: center;
         padding: 2px;
         cursor: pointer;
-        transition: background-color var(--transition), border-color var(--transition);
+        transition:
+          background-color var(--transition),
+          border-color var(--transition);
       }
 
       .switch-thumb {
@@ -1105,20 +1061,22 @@
         height: 16px;
         border-radius: 50%;
         background: var(--fgColor-muted);
-        transition: transform var(--transition), background-color var(--transition);
+        transition:
+          transform var(--transition),
+          background-color var(--transition);
       }
 
-      .switch input:checked+.switch-track {
+      .switch input:checked + .switch-track {
         background: var(--accent-emphasis);
         border-color: var(--accent-emphasis);
       }
 
-      .switch input:checked+.switch-track .switch-thumb {
+      .switch input:checked + .switch-track .switch-thumb {
         transform: translateX(16px);
         background: #fff;
       }
 
-      .switch input:focus-visible+.switch-track {
+      .switch input:focus-visible + .switch-track {
         outline: 2px solid var(--focus-outline);
         outline-offset: 1px;
       }
@@ -1144,12 +1102,6 @@
         flex-wrap: wrap;
         gap: 6px;
         margin-bottom: 8px;
-        /* Flex items default to min-width:auto, which lets a single long
-           label force this whole row wider than the card and spill past
-           its right edge instead of wrapping to a new row like the rest -
-           min-width:0 lets flex-wrap actually do its job. Sorting the
-           buttons shortest-name-first (see renderProxyCountryButtons) is
-           the main fix; this is just a safety net. */
         min-width: 0;
       }
 
@@ -1165,7 +1117,10 @@
         font: inherit;
         font-size: 11px;
         cursor: pointer;
-        transition: background-color var(--transition), border-color var(--transition), color var(--transition);
+        transition:
+          background-color var(--transition),
+          border-color var(--transition),
+          color var(--transition);
       }
 
       .proxyip-country-btn .country-name {
@@ -1255,11 +1210,6 @@
         background: var(--bgColor-inset);
       }
 
-      /* A single control does double duty: checking it both marks the IP
-         selected for bulk-copy (see updateProxyBulkBar) AND expands its
-         Xray/Singbox buttons below - there's no separate "pick one to
-         preview" toggle anymore, since two different checkboxes doing two
-         related things on the same row was confusing to use. */
       .proxyip-ip-toggle {
         display: flex;
         align-items: center;
@@ -1283,13 +1233,7 @@
         display: none;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
-        /* Symmetric, and matching .proxyip-ip-toggle's own 8px horizontal
-           padding above it, so the buttons line up with the row instead
-           of sitting under an arbitrary indent that only happened to
-           match the old layout. */
         padding: 8px;
-        /* Distinct from .icon-btn's own background (--bgColor-overlay) so
-           the copy buttons don't visually blend into their own container. */
         background: var(--bgColor-inset);
         border-top: 1px solid var(--borderColor-muted);
       }
@@ -1342,10 +1286,6 @@
         font-size: 11px;
       }
 
-      /* The copy-config buttons sit on a --bgColor-inset container, so
-         give them their own lighter fill + accent-tinted border -
-         otherwise they read as flat/illegible against the surrounding
-         card instead of as clickable buttons. */
       .proxyip-ip-configs .icon-btn {
         background: var(--bgColor-muted);
         border-color: var(--borderColor-default);
@@ -1362,12 +1302,6 @@
         color: var(--fgColor-muted);
         font-size: 12px;
         padding: 6px 0;
-      }
-
-      @media (max-width: 760px) {
-        .cards-row {
-          grid-template-columns: 1fr;
-        }
       }
 
       .skeleton {
@@ -1411,12 +1345,12 @@
       }
 
       .custom-routing-trigger {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: center;
         gap: 5px;
         width: fit-content;
-        margin: 4px auto 0;
+        margin: 12px auto;
         padding: 3px 0;
         color: var(--fgColor-muted);
         font-size: 11px;
@@ -1597,84 +1531,404 @@
         flex: 0 0 auto;
       }
 
+      .cards-row .config-card.nat64-card,
+      .cards-row .config-card.proxyip-card {
+        position: relative;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 100% 0%, rgba(56, 139, 253, 0.075), transparent 36%),
+          var(--bgColor-muted);
+      }
+
+      .nat64-card::after,
+      .proxyip-card::after {
+        content: "";
+        position: absolute;
+        width: 190px;
+        height: 190px;
+        right: -110px;
+        top: -120px;
+        border-radius: 50%;
+        background: rgba(56, 139, 253, 0.045);
+        filter: blur(32px);
+        pointer-events: none;
+      }
+
+      .nat64-header,
+      .proxyip-header {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .nat64-heading,
+      .proxyip-heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .nat64-mark,
+      .proxyip-mark {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        border: 1px solid rgba(88, 166, 255, 0.3);
+        border-radius: 10px;
+        background: var(--accent-muted);
+        color: #79c0ff;
+      }
+
+      .nat64-mark svg,
+      .proxyip-mark svg {
+        width: 19px;
+        height: 19px;
+      }
+
+      .nat64-heading-text,
+      .proxyip-heading-text {
+        min-width: 0;
+      }
+
+      .nat64-heading-text strong,
+      .proxyip-heading-text strong {
+        display: block;
+        color: var(--fgColor-default);
+        font-size: 14px;
+        line-height: 1.3;
+        font-weight: 600;
+      }
+
+      .nat64-heading-text span,
+      .proxyip-heading-text span {
+        display: block;
+        margin-top: 2px;
+        color: var(--fgColor-muted);
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .nat64-status,
+      .proxyip-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        padding: 4px 8px;
+        border: 1px solid rgba(63, 185, 80, 0.25);
+        border-radius: 999px;
+        background: var(--success-muted);
+        color: #7ee787;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .nat64-status::before,
+      .proxyip-status::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.08);
+      }
+
+      .nat64-description,
+      .proxyip-description {
+        position: relative;
+        z-index: 1;
+        margin: 0 0 12px;
+        color: var(--fgColor-muted);
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .nat64-route {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 42px;
+        margin-bottom: 10px;
+        padding: 6px 8px;
+        border: 1px solid var(--borderColor-muted);
+        border-radius: 8px;
+        background: var(--bgColor-inset);
+      }
+
+      .nat64-route-node {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        padding: 5px 7px;
+        border: 1px solid var(--borderColor-muted);
+        border-radius: 6px;
+        background: var(--bgColor-overlay);
+        color: var(--fgColor-muted);
+        font-family: var(--font-mono);
+        font-size: 9px;
+        white-space: nowrap;
+      }
+
+      .nat64-route-node.active {
+        border-color: rgba(88, 166, 255, 0.35);
+        background: var(--accent-muted);
+        color: #79c0ff;
+      }
+
+      .nat64-route-arrow {
+        color: var(--fgColor-subtle);
+        font-size: 10px;
+        line-height: 1;
+      }
+
+      .nat64-status-box {
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        margin-bottom: 10px;
+        border: 1px solid var(--borderColor-muted);
+        border-radius: 8px;
+        background: var(--bgColor-inset);
+      }
+
+      .nat64-status-row {
+        min-height: 34px;
+        padding: 6px 9px;
+        border-top: 0;
+      }
+
+      .nat64-status-row + .nat64-status-row {
+        border-top: 1px solid var(--borderColor-muted);
+      }
+
+      .nat64-status-row > span:first-child {
+        color: var(--fgColor-muted);
+        font-size: 10px;
+      }
+
+      .nat64-copy-btn {
+        position: relative;
+        z-index: 1;
+        min-height: 34px;
+        margin-top: auto;
+        border-radius: 7px;
+      }
+
+      .proxyip-description {
+        margin-bottom: 10px;
+      }
+
+      .proxyip-toolbar {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 9px;
+      }
+
+      .proxyip-toolbar-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--fgColor-muted);
+        font-size: 9px;
+        font-weight: 600;
+      }
+
+      .proxyip-toolbar-label::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--fgColor-success);
+        box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.08);
+      }
+
+      .proxyip-toolbar .refresh-btn {
+        min-height: 27px;
+        padding: 0 8px;
+        border-radius: 6px;
+        font-size: 9px;
+      }
+
+      .proxyip-country-buttons {
+        position: relative;
+        z-index: 1;
+        padding: 7px;
+        margin-bottom: 8px;
+        border: 1px solid var(--borderColor-muted);
+        border-radius: 8px;
+        background: var(--bgColor-inset);
+      }
+
+      .proxyip-country-btn {
+        min-height: 25px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 9px;
+      }
+
+      .proxyip-bulk-bar {
+        position: relative;
+        z-index: 1;
+        min-height: 34px;
+        padding: 5px 7px;
+        margin-bottom: 8px;
+        border-radius: 7px;
+      }
+
+      .proxyip-bulk-count {
+        font-family: var(--font-mono);
+        font-size: 9px;
+      }
+
+      .proxyip-bulk-actions {
+        gap: 5px;
+      }
+
+      .proxyip-bulk-actions .icon-btn {
+        min-height: 26px;
+        padding: 0 7px;
+        border-radius: 5px;
+        font-size: 9px;
+      }
+
+      .proxyip-list {
+        position: relative;
+        z-index: 1;
+        max-height: 330px;
+        padding-right: 1px;
+      }
+
+      .proxyip-item {
+        padding: 8px;
+        border-radius: 8px;
+        background: var(--bgColor-inset);
+        transition:
+          border-color var(--transition),
+          background-color var(--transition);
+      }
+
+      .proxyip-item:hover {
+        border-color: var(--borderColor-default);
+      }
+
+      .proxyip-item-head {
+        min-height: 22px;
+      }
+
+      .proxyip-item-host {
+        font-size: 10px;
+      }
+
+      .proxyip-ip-options {
+        margin-top: 5px;
+        gap: 4px;
+      }
+
+      .proxyip-ip-option {
+        border-radius: 6px;
+      }
+
+      .proxyip-ip-toggle {
+        min-height: 29px;
+        padding: 5px 7px;
+      }
+
+      .proxyip-ip-addr {
+        font-size: 10px;
+      }
+
+      .proxyip-index {
+        font-size: 9px;
+      }
+
+      .proxyip-ip-configs {
+        padding: 6px;
+        gap: 5px;
+      }
+
+      .proxyip-ip-configs .icon-btn {
+        min-height: 27px;
+        border-radius: 5px;
+        font-size: 9px;
+      }
+
       @media (max-width: 900px) {
-        .ip-info-grid {
-          grid-template-columns: 1fr;
-        }
+        .ip-info-grid { grid-template-columns: 1fr; }
       }
-
+      
+      @media (max-width: 760px) {
+        .cards-row { grid-template-columns: 1fr; }
+      }
+      
       @media (max-width: 640px) {
-        body {
-          padding: 12px;
-        }
-
-        .container {
-          gap: 10px;
-        }
-
-        .config-card {
-          padding: 12px;
-        }
-
-        .client-buttons {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .modal-btn-group {
-          grid-template-columns: 1fr;
-        }
-
-        .header p {
-          font-size: 11px;
-        }
-
-        .footer {
-          font-size: 11px;
-        }
+        body { padding: 12px; }
+        .container { gap: 10px; }
+        .config-card { padding: 12px; }
+        .header p,
+        .footer { font-size: 11px; }
+      
+        .client-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .modal-btn-group,
+        .fragment-toolbar,
+        .fragment-node-body { grid-template-columns: 1fr; }
+        .fragment-field.full { grid-column: auto; }
+        .fragment-footer {align-items: stretch; flex-direction: column;}
+        .fragment-fingerprint { justify-content: space-between; }
+        .fragment-reset { width: 100%; }
+      
+        .nat64-header,
+        .proxyip-header { align-items: flex-start; }
+        .nat64-status,
+        .proxyip-status { padding: 3px 7px; font-size: 9px; }
+        .nat64-route { overflow-x: auto; }
+        .nat64-route-node { flex: 0 0 auto; }
       }
-
-      @media (max-width: 420px) {
-        body {
-          padding: 10px;
-        }
-
-        .config-title {
-          align-items: flex-start;
-          flex-direction: column;
-        }
-
-        .config-title .refresh-btn {
-          width: 100%;
-        }
-
+      
+      @media (max-width: 430px) {
+        body { padding: 10px; }
+      
+        .config-title {align-items: flex-start; flex-direction: column;}
+        .config-title .refresh-btn { width: 100%; }
+      
         .ip-info-section,
         .config-content,
-        .modal-content {
-          padding: 10px;
-        }
-
-        .client-btn .button-text {
-          font-size: 11px;
-        }
-
-        .client-btn {
-          min-height: 32px;
-        }
-
+        .modal-content { padding: 10px; }
+      
+        .client-btn { min-height: 32px; }
+        .client-btn .button-text { font-size: 11px; }
+      
         .button,
         .refresh-btn,
         .icon-btn,
-        .client-btn {
-          font-size: 12px;
-        }
-
-        .ip-info-item .label {
-          font-size: 10px;
-        }
-
-        .ip-info-item .value {
-          font-size: 12px;
-        }
+        .client-btn { font-size: 12px; }
+      
+        .ip-info-item .label { font-size: 10px; }
+        .ip-info-item .value { font-size: 12px; }
+      
+        .fragment-status { display: none; }
+        .fragment-heading-text span { font-size: 10px; }
+        .fragment-presets { grid-template-columns: 1fr; }
+        .fragment-view-toggle { justify-content: center; }
+        .nat64-header,
+        .proxyip-header { flex-wrap: wrap; }
+        .nat64-status,
+        .proxyip-status { margin-left: 46px; }
       }
     </style>
   </head>
@@ -1729,73 +1983,6 @@
         </div>
       </div>
 
-      <div class="cards-row">
-        <div class="config-card nat64-card">
-          <div class="config-title">
-            <span>NAT64 Fallback</span>
-            <label class="switch" aria-label="Toggle NAT64 fallback for the copied config">
-              <input type="checkbox" id="nat64-toggle" data-default="{{NAT64_DEFAULT}}">
-              <span class="switch-track"><span class="switch-thumb"></span></span>
-            </label>
-          </div>
-          <p class="card-desc">
-            If both the direct route and every configured ProxyIP fail, the worker can translate the destination into a
-            64:ff9b::/96 address and let Cloudflare's own NAT64 gateway reach it. Turn it off to force the worker to give up
-            instead of falling back.
-          </p>
-          <div class="nat64-status-row">
-            <span>Server default</span>
-            <span id="nat64-server-badge" class="badge badge-neutral">…</span>
-          </div>
-          <div class="nat64-status-row">
-            <span>This config</span>
-            <span id="nat64-config-badge" class="badge badge-neutral">…</span>
-          </div>
-          <button id="nat64-copy-btn" type="button" class="icon-btn nat64-copy-btn" aria-label="Copy config with this NAT64 setting" data-nat64-on="{{CONFIG_NAT64_ON}}" data-nat64-off="{{CONFIG_NAT64_OFF}}">
-            <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-            <span class="button-text">Copy Xray config with this setting</span>
-          </button>
-        </div>
-
-        <div id="proxyip-card" class="config-card proxyip-card" data-url="{{URL_PROXYIPS}}">
-          <div class="config-title">
-            <span>ProxyIPs</span>
-            <button id="proxyip-refresh" class="refresh-btn" aria-label="Refresh ProxyIP list" title="Refresh ProxyIP list">
-              <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
-              </svg>
-              Refresh
-            </button>
-          </div>
-          <div id="proxyip-country-buttons" class="proxyip-country-buttons"></div>
-          <div id="proxyip-bulk-bar" class="proxyip-bulk-bar">
-            <span id="proxyip-bulk-count" class="proxyip-bulk-count">0 selected</span>
-            <div class="proxyip-bulk-actions">
-              <button type="button" id="proxyip-bulk-copy-xray" class="icon-btn" disabled>
-                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span>Copy Xray</span>
-              </button>
-              <button type="button" id="proxyip-bulk-copy-sb" class="icon-btn" disabled>
-                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span>Copy Singbox</span>
-              </button>
-            </div>
-          </div>
-          <div id="proxyip-list" class="proxyip-list">
-            <div class="proxyip-empty">Loading ProxyIPs…</div>
-          </div>
-        </div>
-      </div>
-
       <div class="config-card">
         <div class="config-title">
           <span>Xray Core Clients</span>
@@ -1838,6 +2025,129 @@
               </svg></span>
             <span class="button-text">Import to Hiddify</span>
           </a>
+        </div>
+      </div>
+
+      <div class="cards-row">
+        <div class="config-card nat64-card">
+          <div class="nat64-header">
+            <div class="nat64-heading">
+              <div class="nat64-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9S14.5 16.5 12 21M12 3c-2.5 2.5-3.5 5.5-3.5 9S9.5 18.5 12 21" />
+                </svg>
+              </div>
+              <div class="nat64-heading-text">
+                <strong>NAT64 Fallback</strong>
+                <span>IPv4 fallback through Cloudflare NAT64</span>
+              </div>
+            </div>
+
+            <label class="switch" aria-label="Toggle NAT64 fallback for the copied config">
+              <input type="checkbox" id="nat64-toggle" data-default="{{NAT64_DEFAULT}}">
+              <span class="switch-track">
+                <span class="switch-thumb"></span>
+              </span>
+            </label>
+          </div>
+
+          <p class="nat64-description">
+            If the direct route and configured ProxyIPs fail, the worker can translate the destination through
+            <span class="mono">64:ff9b::/96</span> and use Cloudflare's NAT64 gateway as the final fallback.
+          </p>
+
+          <div class="nat64-route">
+            <span class="nat64-route-node">Direct</span>
+            <span class="nat64-route-arrow">→</span>
+            <span class="nat64-route-node">ProxyIP</span>
+            <span class="nat64-route-arrow">→</span>
+            <span class="nat64-route-node active">NAT64</span>
+          </div>
+
+          <div class="nat64-status-box">
+            <div class="nat64-status-row">
+              <span>Server default</span>
+              <span id="nat64-server-badge" class="badge badge-neutral">…</span>
+            </div>
+
+            <div class="nat64-status-row">
+              <span>This config</span>
+              <span id="nat64-config-badge" class="badge badge-neutral">…</span>
+            </div>
+          </div>
+
+          <button id="nat64-copy-btn" type="button" class="icon-btn nat64-copy-btn" aria-label="Copy config with this NAT64 setting" data-nat64-on="{{CONFIG_NAT64_ON}}" data-nat64-off="{{CONFIG_NAT64_OFF}}">
+            <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="button-text">Copy Xray config with this setting</span>
+          </button>
+        </div>
+
+        <div id="proxyip-card" class="config-card proxyip-card" data-url="{{URL_PROXYIPS}}">
+          <div class="proxyip-header">
+            <div class="proxyip-heading">
+              <div class="proxyip-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h6M15 12h6M12 3v6M12 15v6" />
+                </svg>
+              </div>
+
+              <div class="proxyip-heading-text">
+                <strong>ProxyIPs</strong>
+                <span>Available fallback proxy endpoints</span>
+              </div>
+            </div>
+
+            <span class="proxyip-status">Live List</span>
+          </div>
+
+          <p class="proxyip-description">
+            Select a country and choose one or more proxy endpoints to generate client-ready configurations.
+          </p>
+
+          <div class="proxyip-toolbar">
+            <span class="proxyip-toolbar-label">Available locations</span>
+
+            <button id="proxyip-refresh" class="refresh-btn" aria-label="Refresh ProxyIP list" title="Refresh ProxyIP list">
+              <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <div id="proxyip-country-buttons" class="proxyip-country-buttons"></div>
+
+          <div id="proxyip-bulk-bar" class="proxyip-bulk-bar">
+            <span id="proxyip-bulk-count" class="proxyip-bulk-count">0 selected</span>
+
+            <div class="proxyip-bulk-actions">
+              <button type="button" id="proxyip-bulk-copy-xray" class="icon-btn" disabled>
+                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Xray</span>
+              </button>
+
+              <button type="button" id="proxyip-bulk-copy-sb" class="icon-btn" disabled>
+                <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Singbox</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="proxyip-list" class="proxyip-list">
+            <div class="proxyip-empty">Loading ProxyIPs…</div>
+          </div>
         </div>
       </div>
 
@@ -1969,35 +2279,38 @@
     <script>
       function copyToClipboard(button, text) {
         const originalHTML = button.innerHTML;
-        navigator.clipboard.writeText(text).then(() => {
-          button.innerHTML = `
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            button.innerHTML = `
       <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 6L9 17l-5-5"></path>
       </svg>
     `;
-          button.classList.add("copied");
-          button.disabled = true;
-          setTimeout(() => {
-            button.innerHTML = originalHTML;
-            button.classList.remove("copied");
-            button.disabled = false;
-          }, 1200);
-        }).catch((err) => {
-          console.error("Failed to copy text: ", err);
-          const originalHTMLError = button.innerHTML;
-          button.innerHTML = `
+            button.classList.add("copied");
+            button.disabled = true;
+            setTimeout(() => {
+              button.innerHTML = originalHTML;
+              button.classList.remove("copied");
+              button.disabled = false;
+            }, 1200);
+          })
+          .catch((err) => {
+            console.error("Failed to copy text: ", err);
+            const originalHTMLError = button.innerHTML;
+            button.innerHTML = `
       <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 6L6 18M6 6l12 12"></path>
       </svg>
     `;
-          button.classList.add("error");
-          button.disabled = true;
-          setTimeout(() => {
-            button.innerHTML = originalHTMLError;
-            button.classList.remove("error");
-            button.disabled = false;
-          }, 1500);
-        });
+            button.classList.add("error");
+            button.disabled = true;
+            setTimeout(() => {
+              button.innerHTML = originalHTMLError;
+              button.classList.remove("error");
+              button.disabled = false;
+            }, 1500);
+          });
       }
 
       function updateIpApiIoDisplay(geo, prefix, originalHost) {
@@ -2021,20 +2334,18 @@
           const city = geo.city || "";
           const countryName = geo.country_name || "";
           const countryCode = geo.country_code ? geo.country_code.toLowerCase() : "";
-          let flagElementHtml = countryCode ?
-            `<img src="https://flagcdn.com/w20/${countryCode}.png" srcset="https://flagcdn.com/w40/${countryCode}.png 2x" alt="${geo.country_code}" class="country-flag"> ` :
-            "";
+          let flagElementHtml = countryCode
+            ? `<img src="https://flagcdn.com/w20/${countryCode}.png" srcset="https://flagcdn.com/w40/${countryCode}.png 2x" alt="${geo.country_code}" class="country-flag"> `
+            : "";
           let textPart = [city, countryName].filter(Boolean).join(", ");
-          elements.location.innerHTML = flagElementHtml || textPart ? `${flagElementHtml}${textPart}`.trim() : "N/A";
+          elements.location.innerHTML =
+            flagElementHtml || textPart ? `${flagElementHtml}${textPart}`.trim() : "N/A";
         }
-        if (elements.isp) elements.isp.textContent = geo.isp || geo.organization || geo.org || "N/A";
+        if (elements.isp)
+          elements.isp.textContent = geo.isp || geo.organization || geo.org || "N/A";
       }
       async function fetchProxyHostInfo(host) {
         try {
-          // Server-side lookup (DNS resolve + geolocation, both run from
-          // the worker, not the visitor's browser) - see handleProxyHostInfo
-          // in src/routes.js. Response shape matches what
-          // updateIpApiIoDisplay() already expects.
           const response = await fetch(`/proxy-host-info?host=${encodeURIComponent(host)}`);
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           return await response.json();
@@ -2052,8 +2363,14 @@
           return "badge-yes";
         }
         const normalized = (risk || "").toString().toLowerCase();
-        if (normalized.includes("very high") || normalized.includes("critical") || normalized.includes("high")) return "badge-no";
-        if (normalized.includes("medium") || normalized.includes("moderate")) return "badge-warning";
+        if (
+          normalized.includes("very high") ||
+          normalized.includes("critical") ||
+          normalized.includes("high")
+        )
+          return "badge-no";
+        if (normalized.includes("medium") || normalized.includes("moderate"))
+          return "badge-warning";
         if (normalized.includes("low")) return "badge-yes";
         return "badge-neutral";
       }
@@ -2070,11 +2387,13 @@
         if (elements.isp) elements.isp.textContent = data.isp || "N/A";
         if (elements.location) {
           const countryCode = data.country ? data.country.toLowerCase() : "";
-          const flagElementHtml = (countryCode && countryCode !== "n/a") ?
-            `<img src="https://flagcdn.com/w20/${countryCode}.png" srcset="https://flagcdn.com/w40/${countryCode}.png 2x" alt="${data.country}" class="country-flag"> ` :
-            "";
+          const flagElementHtml =
+            countryCode && countryCode !== "n/a"
+              ? `<img src="https://flagcdn.com/w20/${countryCode}.png" srcset="https://flagcdn.com/w40/${countryCode}.png 2x" alt="${data.country}" class="country-flag"> `
+              : "";
           const textPart = [data.city, data.country].filter(Boolean).join(", ");
-          elements.location.innerHTML = flagElementHtml || textPart ? `${flagElementHtml}${textPart}`.trim() : "N/A";
+          elements.location.innerHTML =
+            flagElementHtml || textPart ? `${flagElementHtml}${textPart}`.trim() : "N/A";
         }
         if (elements.proxy) {
           const score = data.threatScore;
@@ -2086,12 +2405,17 @@
 
       function showError(prefix, message = "Could not load data", originalHostForProxy = null) {
         const errorMessage = "N/A";
-        const elements = prefix === "proxy" ? ["host", "ip", "location", "isp"] : ["ip", "location", "isp", "proxy"];
+        const elements =
+          prefix === "proxy"
+            ? ["host", "ip", "location", "isp"]
+            : ["ip", "location", "isp", "proxy"];
         elements.forEach((key) => {
           const el = document.getElementById(`${prefix}-${key}`);
           if (!el) return;
-          if (key === "host" && prefix === "proxy") el.textContent = originalHostForProxy || errorMessage;
-          else if (key === "proxy" && prefix === "client") el.innerHTML = `<span class="badge badge-neutral">N/A</span>`;
+          if (key === "host" && prefix === "proxy")
+            el.textContent = originalHostForProxy || errorMessage;
+          else if (key === "proxy" && prefix === "client")
+            el.innerHTML = `<span class="badge badge-neutral">N/A</span>`;
           else el.innerHTML = errorMessage;
         });
         console.warn(`${prefix} data loading failed: ${message}`);
@@ -2122,7 +2446,11 @@
           }
         } catch (error) {
           console.error("Overall network info loading failed:", error);
-          showError("proxy", `Error: ${error.message}`, document.body.getAttribute("data-proxy-ip") || "N/A");
+          showError(
+            "proxy",
+            `Error: ${error.message}`,
+            document.body.getAttribute("data-proxy-ip") || "N/A",
+          );
           showError("client", `Error: ${error.message}`);
         }
       }
@@ -2134,19 +2462,12 @@
         return `vless://${userID}@${newHost}:${newPort}${queryString}#${encodeURIComponent(newName)}`;
       }
 
-      // Matches the worker's own makeName(tag, proto) convention
-      // (src/core.js: `${tag}-${proto.toUpperCase()}`) instead of a
-      // one-off naming scheme, so client-generated configs look and sort
-      // consistently with everything the worker itself names.
       function makeClientConfigName(baseLink, tag) {
         const securityMatch = baseLink.match(/[?&]security=([^&#]+)/);
         const proto = securityMatch && securityMatch[1] !== "none" ? "tls" : "tcp";
         return `${tag}-${proto.toUpperCase()}`;
       }
 
-      // Sets/overwrites a key (e.g. nat64=on/off) inside the ws path query
-      // that's embedded in a VLESS link's own `path` param, mirroring the
-      // worker's withConfigOverrides()/parsePathOverrides() on the backend.
       function withPathOverride(rawLink, overrides = {}) {
         const match = rawLink.match(/^(vless:\/\/[^?#]+)(\?[^#]*)?(#.*)?$/);
         if (!match) return rawLink;
@@ -2170,27 +2491,17 @@
         const configBadge = document.getElementById("nat64-config-badge");
         const copyBtn = document.getElementById("nat64-copy-btn");
         if (!toggle || !serverBadge || !configBadge || !copyBtn) return;
-
         const defaultOn = toggle.dataset.default !== "off";
         toggle.checked = defaultOn;
-
         const renderBadge = (el, on) => {
           el.textContent = on ? "Enabled" : "Disabled";
           el.className = `badge ${on ? "badge-yes" : "badge-no"}`;
         };
         renderBadge(serverBadge, defaultOn);
-
         const sync = () => renderBadge(configBadge, toggle.checked);
         sync();
         toggle.addEventListener("change", sync);
-
         copyBtn.addEventListener("click", () => {
-          // Server-precomputed full links (see {{CONFIG_NAT64_ON}}/{{CONFIG_NAT64_OFF}}
-          // in handleConfigPage), so the copied config is always correctly
-          // named "NAT64-TLS" and keeps every field (alpn included) exactly
-          // as buildLink() generated it, instead of patching just the ws
-          // path of the unrelated "xray-config" link and leaving its name
-          // and the rest of its params untouched.
           const link = toggle.checked ? copyBtn.dataset.nat64On : copyBtn.dataset.nat64Off;
           if (!link) return;
           copyToClipboard(copyBtn, link);
@@ -2205,10 +2516,6 @@
         return "badge-yes";
       }
 
-      // Country codes aren't emoji by themselves; this turns "us" into 🇺🇸
-      // via the regional-indicator trick, same as countryCodeToFlagEmoji()
-      // in src/core.js (duplicated here since index.html isn't part of the
-      // worker's own module bundle).
       function countryFlagEmoji(countryCode) {
         if (!countryCode || countryCode.length !== 2) return "";
         const points = [...countryCode.toUpperCase()].map((c) => 0x1f1e6 + (c.charCodeAt(0) - 65));
@@ -2216,32 +2523,13 @@
         return String.fromCodePoint(...points);
       }
 
-      // Every host - whether it's a single fixed IP or a domain that
-      // resolved to several IPs - gets the same card shape: the host on
-      // its own header line, and its IP(s) listed below as one or more
-      // toggleable options (defaulting to the lowest-risk one, since
-      // entries are already sorted ascending by risk server-side). That
-      // keeps countries with only one ProxyIP visually consistent with
-      // countries that have many, instead of the single-IP case getting
-      // a flattened one-line layout of its own.
-      //
-      // `counter` is a single mutable { n } shared across the whole
-      // currently-rendered country list (see renderProxyIpCountry) so
-      // every individual IP - across every host card - gets one running
-      // "#1, #2, ..." index, not an index that resets per host group.
       function renderProxyHostGroup(hostGroup, counter) {
         const div = document.createElement("div");
         div.className = "proxyip-item";
-        // Custom checkbox-style options instead of a native <select>: the
-        // browser's own dropdown can only show one plain-text line per IP
-        // and only lets you pick one. Here every IP is its own toggle card
-        // showing its risk score/label right on the card (so it's visible
-        // without opening anything), and more than one can be expanded at
-        // once since a client app might want several fallback IPs.
         const optionsHtml = hostGroup.entries
           .map((entry, i) => {
             const badgeClass = proxyRiskBadgeClass(entry.score);
-            const selected = i === 0; // lowest risk, since entries are pre-sorted ascending
+            const selected = i === 0;
             const xrayCfg = entry.configs.find((c) => c.label === "Xray");
             const sbCfg = entry.configs.find((c) => c.label === "Singbox");
             const configButtons = entry.configs
@@ -2290,19 +2578,15 @@
           return;
         }
         list.innerHTML = "";
-        const counter = { n: 0 };
-        group.hosts.forEach((hostGroup) => list.appendChild(renderProxyHostGroup(hostGroup, counter)));
-        // Every render is a fresh set of checkboxes (all unchecked), so the
-        // bulk bar's count/buttons need resetting to match - otherwise a
-        // stale count could sit there pointing at elements that no longer
-        // exist after switching country or refreshing.
+        const counter = {
+          n: 0,
+        };
+        group.hosts.forEach((hostGroup) =>
+          list.appendChild(renderProxyHostGroup(hostGroup, counter)),
+        );
         updateProxyBulkBar();
       }
 
-      // Keeps the "N selected" label and the two bulk-copy buttons in sync
-      // with however many .proxyip-select checkboxes are currently ticked
-      // inside #proxyip-list. Called after every re-render and on every
-      // checkbox change.
       function updateProxyBulkBar() {
         const list = document.getElementById("proxyip-list");
         const countEl = document.getElementById("proxyip-bulk-count");
@@ -2314,10 +2598,6 @@
         if (sbBtn) sbBtn.disabled = checked === 0;
       }
 
-      // Joins every checked entry's config (by data-xray-link or
-      // data-sb-link) into one newline-separated block and copies it -
-      // the same "flat list of vless:// links" shape as an /xray or /sb
-      // subscription, just limited to whatever the user hand-picked.
       function copySelectedProxyConfigs(button, attr) {
         const list = document.getElementById("proxyip-list");
         if (!list) return;
@@ -2332,19 +2612,14 @@
       function renderProxyCountryButtons(groups, activeCountry, onSelect) {
         const bar = document.getElementById("proxyip-country-buttons");
         if (!bar) return;
-        // Server sorts `groups` itself "country - risk, ascending" (lowest
-        // overall-risk country first) - that order still drives which
-        // country is selected by default (see initialCountry above). Here,
-        // for display only, a separate copy is sorted shortest-name-first:
-        // packing short pills ("UAE"-length names) before long ones
-        // ("United Arab Emirates") wraps far more evenly, so a lone long
-        // label doesn't end up stranded on its own row pushing the card
-        // wider than the one next to it.
         const byNameLength = [...groups].sort((a, b) => a.country.length - b.country.length);
         bar.innerHTML = byNameLength
           .map((g) => {
             const flag = g.flag || countryFlagEmoji(g.countryCode) || "🏳️";
-            const riskHint = g.lowestScore != null ? `${escapeHtml(g.lowestScore)} - ${escapeHtml(g.lowestRisk)}` : "no score";
+            const riskHint =
+              g.lowestScore != null
+                ? `${escapeHtml(g.lowestScore)} - ${escapeHtml(g.lowestRisk)}`
+                : "no score";
             return `
               <button type="button" class="proxyip-country-btn${g.country === activeCountry ? " active" : ""}" data-country="${escapeHtml(g.country)}" title="${escapeHtml(g.country)}">
                 <span class="flag">${flag}</span>
@@ -2356,12 +2631,13 @@
           .join("");
         bar.querySelectorAll("[data-country]").forEach((btn) => {
           btn.addEventListener("click", () => {
-            bar.querySelectorAll(".proxyip-country-btn").forEach((b) => b.classList.toggle("active", b === btn));
+            bar
+              .querySelectorAll(".proxyip-country-btn")
+              .forEach((b) => b.classList.toggle("active", b === btn));
             onSelect(btn.getAttribute("data-country"));
           });
         });
       }
-
       async function initProxyIpCard() {
         const card = document.getElementById("proxyip-card");
         const bar = document.getElementById("proxyip-country-buttons");
@@ -2370,51 +2646,33 @@
         if (!card || !bar || !list) return;
         const url = card.getAttribute("data-url");
         if (!url) return;
-
-        // Delegated once: covers both the static rows and the dynamically
-        // re-rendered config buttons under a host's IP <select>, so a
-        // change to the selected IP never needs its own listener rewiring.
         list.addEventListener("click", (e) => {
           const btn = e.target.closest("[data-proxyip-link]");
           if (!btn) return;
           const link = decodeURIComponent(btn.getAttribute("data-proxyip-link"));
           copyToClipboard(btn, link);
         });
-
-        // Same delegation approach for the per-row selection checkboxes -
-        // one listener covers every checkbox across every re-render. When
-        // the checkbox belongs to a domain group's IP option, it also
-        // drives that option's expand/collapse (the "selected" class) -
-        // one checkbox now does both jobs instead of two separate
-        // checkbox-shaped controls on the same row.
         list.addEventListener("change", (e) => {
           if (!e.target.classList.contains("proxyip-select")) return;
           const option = e.target.closest(".proxyip-ip-option");
           if (option) option.classList.toggle("selected", e.target.checked);
           updateProxyBulkBar();
         });
-
         const bulkCopyXrayBtn = document.getElementById("proxyip-bulk-copy-xray");
         const bulkCopySbBtn = document.getElementById("proxyip-bulk-copy-sb");
-        bulkCopyXrayBtn?.addEventListener("click", () => copySelectedProxyConfigs(bulkCopyXrayBtn, "data-xray-link"));
-        bulkCopySbBtn?.addEventListener("click", () => copySelectedProxyConfigs(bulkCopySbBtn, "data-sb-link"));
-
+        bulkCopyXrayBtn?.addEventListener("click", () =>
+          copySelectedProxyConfigs(bulkCopyXrayBtn, "data-xray-link"),
+        );
+        bulkCopySbBtn?.addEventListener("click", () =>
+          copySelectedProxyConfigs(bulkCopySbBtn, "data-sb-link"),
+        );
         const load = async (forceRefresh = false) => {
           list.innerHTML = `<div class="proxyip-empty">Loading ProxyIPs…</div>`;
           bar.innerHTML = "";
           const icon = refreshBtn?.querySelector(".refresh-icon");
           if (refreshBtn) refreshBtn.disabled = true;
-          // Same spin-while-loading treatment as the "Refresh IP
-          // information" button above this card (see the
-          // "refresh-ip-info" click handler) - both refresh buttons
-          // should look and behave the same way while their fetch is in
-          // flight.
           if (icon) icon.style.animation = "spin 1s linear infinite";
           try {
-            // ?refresh=1 bypasses the worker's own response caches so a
-            // click on Refresh actually re-checks each domain's current
-            // IP set (see handleProxyIpsInfo in src/routes.js) instead of
-            // just re-fetching the same cached JSON as the initial load.
             const fetchUrl = forceRefresh ? `${url}${url.includes("?") ? "&" : "?"}refresh=1` : url;
             const res = await fetch(fetchUrl);
             if (!res.ok) throw new Error("Request failed");
@@ -2425,7 +2683,9 @@
               return;
             }
             const initialCountry = groups[0].country;
-            renderProxyCountryButtons(groups, initialCountry, (country) => renderProxyIpCountry(groups, country));
+            renderProxyCountryButtons(groups, initialCountry, (country) =>
+              renderProxyIpCountry(groups, country),
+            );
             renderProxyIpCountry(groups, initialCountry);
           } catch (e) {
             console.error("ProxyIPs load failed:", e);
@@ -2437,7 +2697,6 @@
             }, 1000);
           }
         };
-
         refreshBtn?.addEventListener("click", () => load(true));
         await load();
       }
@@ -2449,7 +2708,8 @@
         const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
         const parts = [];
         for (const [key, value] of params.entries()) {
-          const displayValue = value.length > maxParamLen ? value.slice(0, maxParamLen) + "…" : value;
+          const displayValue =
+            value.length > maxParamLen ? value.slice(0, maxParamLen) + "…" : value;
           parts.push(`${key}=${displayValue}`);
         }
         const decodedHash = hash ? "#" + decodeURIComponent(hash.slice(1)) : "";
@@ -2457,7 +2717,8 @@
       }
       const PATTNG_PRESETS = {
         default: {
-          tcp: [{
+          tcp: [
+            {
               type: "fragment",
               settings: {
                 packets: "tlshello",
@@ -2478,7 +2739,8 @@
           ],
         },
         aggressive: {
-          tcp: [{
+          tcp: [
+            {
               type: "fragment",
               settings: {
                 packets: "tlshello",
@@ -2709,40 +2971,53 @@
         const card = document.getElementById("custom-config-card");
         const pre = document.getElementById("custom-configs-pre");
         if (!card || !pre) return;
-        const lines = savedIps.split('\n').map(line => line.trim()).filter(line => line !== "");
+        const lines = savedIps
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line !== "");
         const xrayBase = document.getElementById("xray-config")?.textContent || "";
         const sbBase = document.getElementById("pattng-config")?.dataset.raw || "";
         let customConfigs = [];
         lines.forEach((ip, index) => {
           let host = ip;
           let port = "443";
-          if (ip.includes(':') && !ip.startsWith('[')) {
-            const parts = ip.split(':');
+          if (ip.includes(":") && !ip.startsWith("[")) {
+            const parts = ip.split(":");
             host = parts[0];
             port = parts[1];
-          } else if (ip.startsWith('[') && ip.includes(']:')) {
-            const parts = ip.split(']:');
-            host = parts[0] + ']';
+          } else if (ip.startsWith("[") && ip.includes("]:")) {
+            const parts = ip.split("]:");
+            host = parts[0] + "]";
             port = parts[1];
           }
           try {
-            const xrFinal = rebuildVlessLink(xrayBase, host, port, makeClientConfigName(xrayBase, `Clean${index + 1}-Xray`));
+            const xrFinal = rebuildVlessLink(
+              xrayBase,
+              host,
+              port,
+              makeClientConfigName(xrayBase, `Clean${index + 1}-Xray`),
+            );
             customConfigs.push(xrFinal);
-            const sbFinal = rebuildVlessLink(sbBase, host, port, makeClientConfigName(sbBase, `Clean${index + 1}-Singbox`));
+            const sbFinal = rebuildVlessLink(
+              sbBase,
+              host,
+              port,
+              makeClientConfigName(sbBase, `Clean${index + 1}-Singbox`),
+            );
             customConfigs.push(sbFinal);
           } catch (e) {
             console.error("Link generation failed for custom route:", e);
           }
         });
         if (customConfigs.length > 0) {
-          const outputText = customConfigs.join('\n');
+          const outputText = customConfigs.join("\n");
           pre.textContent = outputText;
-          card.style.display = 'block';
-          document.getElementById('btn-copy-custom').onclick = function() {
+          card.style.display = "block";
+          document.getElementById("btn-copy-custom").onclick = function () {
             copyToClipboard(this, outputText);
           };
         } else {
-          card.style.display = 'none';
+          card.style.display = "none";
         }
       }
 
@@ -2779,11 +3054,7 @@
         return rawUrl.slice(idx + 4);
       }
 
-      function attachLongPress(el, {
-        onTap,
-        onLongPress,
-        duration = 400
-      }) {
+      function attachLongPress(el, { onTap, onLongPress, duration = 400 }) {
         let timer = null;
         let didLongPress = false;
         let startX = 0;
@@ -2805,18 +3076,26 @@
           if (!timer) return;
           if (Math.abs(x - startX) > 10 || Math.abs(y - startY) > 10) clear();
         };
-        el.addEventListener("touchstart", (e) => {
-          const t = e.touches[0];
-          start(t.clientX, t.clientY);
-        }, {
-          passive: true
-        });
-        el.addEventListener("touchmove", (e) => {
-          const t = e.touches[0];
-          move(t.clientX, t.clientY);
-        }, {
-          passive: true
-        });
+        el.addEventListener(
+          "touchstart",
+          (e) => {
+            const t = e.touches[0];
+            start(t.clientX, t.clientY);
+          },
+          {
+            passive: true,
+          },
+        );
+        el.addEventListener(
+          "touchmove",
+          (e) => {
+            const t = e.touches[0];
+            move(t.clientX, t.clientY);
+          },
+          {
+            passive: true,
+          },
+        );
         el.addEventListener("touchend", () => clear());
         el.addEventListener("touchcancel", () => clear());
         el.addEventListener("mousedown", (e) => start(e.clientX, e.clientY));
@@ -2832,7 +3111,7 @@
           onTap(e);
         });
       }
-      document.getElementById("refresh-ip-info")?.addEventListener("click", function() {
+      document.getElementById("refresh-ip-info")?.addEventListener("click", function () {
         const button = this;
         const icon = button.querySelector(".refresh-icon");
         button.disabled = true;
@@ -3004,7 +3283,7 @@
           });
           refreshPattng(originalPattngRaw, pattngPre);
         });
-        document.getElementById("copy-pattng-btn")?.addEventListener("click", function() {
+        document.getElementById("copy-pattng-btn")?.addEventListener("click", function () {
           copyToClipboard(this, pattngPre?.dataset.raw || "");
         });
         document.querySelectorAll(".client-btn[data-copy-url]").forEach((el) => {
@@ -3025,24 +3304,27 @@
             onLongPress: () => {
               const rawUrl = el.getAttribute("data-copy-url");
               const url = extractSubscriptionUrl(rawUrl);
-              navigator.clipboard.writeText(url).then(() => {
-                flashFeedback(el, true);
-              }).catch((err) => {
-                console.error("Failed to copy link:", err);
-                flashFeedback(el, false);
-              });
+              navigator.clipboard
+                .writeText(url)
+                .then(() => {
+                  flashFeedback(el, true);
+                })
+                .catch((err) => {
+                  console.error("Failed to copy link:", err);
+                  flashFeedback(el, false);
+                });
             },
           });
         });
         if (hiddifyBtn && modal && continueBtn) {
-          continueBtn.addEventListener("click", function() {
+          continueBtn.addEventListener("click", function () {
             modal.classList.remove("visible");
             setTimeout(() => {
               modal.style.display = "none";
               window.location.href = hiddifyBtn.href;
             }, 300);
           });
-          modal.addEventListener("click", function(event) {
+          modal.addEventListener("click", function (event) {
             if (event.target === modal) {
               modal.classList.remove("visible");
               setTimeout(() => (modal.style.display = "none"), 300);
@@ -3083,42 +3365,49 @@
             closeModal();
             if (value.trim().length > 0) {
               document.getElementById("custom-config-card").scrollIntoView({
-                behavior: 'smooth'
+                behavior: "smooth",
               });
             }
           });
         }
       });
-      document.addEventListener('DOMContentLoaded', () => {
-        const subLinks = document.querySelectorAll('a[href*="install-config"], a[href*="subscription"]');
-        subLinks.forEach(link => {
-          const href = link.getAttribute('href');
+      document.addEventListener("DOMContentLoaded", () => {
+        const subLinks = document.querySelectorAll(
+          'a[href*="install-config"], a[href*="subscription"]',
+        );
+        subLinks.forEach((link) => {
+          const href = link.getAttribute("href");
           let rawSubUrl = href;
-          if (href.includes('url=')) {
+          if (href.includes("url=")) {
             const urlParam = href.match(/[?&]url=([^&]+)/);
             if (urlParam) {
               rawSubUrl = decodeURIComponent(urlParam[1]);
             }
           }
-          link.setAttribute('data-raw-url', rawSubUrl);
+          link.setAttribute("data-raw-url", rawSubUrl);
           attachLongPress(link, {
             onTap: () => {},
             onLongPress: () => {
-              navigator.clipboard.writeText(rawSubUrl).then(() => {
-                const toast = document.createElement('div');
-                toast.textContent = 'Subscription URL copied!';
-                toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:5px;z-index:9999;';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2000);
-              }).catch(err => console.error('Copy failed:', err));
+              navigator.clipboard
+                .writeText(rawSubUrl)
+                .then(() => {
+                  const toast = document.createElement("div");
+                  toast.textContent = "Subscription URL copied!";
+                  toast.style.cssText =
+                    "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:5px;z-index:9999;";
+                  document.body.appendChild(toast);
+                  setTimeout(() => toast.remove(), 2000);
+                })
+                .catch((err) => console.error("Copy failed:", err));
             },
           });
-          link.addEventListener('contextmenu', (e) => {
-            navigator.clipboard.writeText(rawSubUrl).catch(err => console.error('Copy failed:', err));
+          link.addEventListener("contextmenu", (e) => {
+            navigator.clipboard
+              .writeText(rawSubUrl)
+              .catch((err) => console.error("Copy failed:", err));
           });
         });
       });
     </script>
   </body>
-
 </html>
