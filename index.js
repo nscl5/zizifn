@@ -8,6 +8,8 @@ import {
   handleIpSubscription,
   handleMyConnection,
   handleResolveDomain,
+  handleProxyIpsInfo,
+  handleProxyHostInfo,
 } from "./src/routes.js";
 
 let wasmReady = null;
@@ -24,7 +26,7 @@ function notFoundPage(hostName, workerName) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Not Found</title>
+<title>Oops. Not Found</title>
 <style>
   body {
     background: #0d1117;
@@ -87,21 +89,40 @@ export default {
         return ProtocolOverWSHandler(request, {
           userID: cfg.userID,
           proxyPool: cfg.proxyPool,
+          nat64: cfg.nat64,
         });
       }
 
       if (url.pathname === "/resolve-domain") return handleResolveDomain(request);
+      if (url.pathname === "/proxy-host-info") return handleProxyHostInfo(request, env, ctx);
       if (url.pathname === "/my-connection") return handleMyConnection(request, env, ctx);
+      if (url.pathname.startsWith(`/proxy-ips/${cfg.userID}`))
+        return handleProxyIpsInfo(request, cfg, url.hostname, ctx, env);
       if (url.pathname.startsWith(`/xray-enhanced/${cfg.userID}`))
-        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, true);
+        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, true, cfg, env);
       if (url.pathname.startsWith(`/xray/${cfg.userID}`))
-        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, false);
+        return handleIpSubscription(
+          request,
+          "xray",
+          cfg.userID,
+          url.hostname,
+          ctx,
+          false,
+          cfg,
+          env,
+        );
       if (url.pathname.startsWith(`/sb/${cfg.userID}`))
-        return handleIpSubscription(request, "sb", cfg.userID, url.hostname, ctx);
+        return handleIpSubscription(request, "sb", cfg.userID, url.hostname, ctx, false, cfg, env);
       if (url.pathname.startsWith(`/clash/${cfg.userID}`))
         return handleClashConfig(request, cfg.userID, url.hostname, ctx);
       if (url.pathname.startsWith(`/${cfg.userID}`))
-        return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress, cfg.workerName);
+        return handleConfigPage(
+          cfg.userID,
+          url.hostname,
+          cfg.proxyAddress,
+          cfg.workerName,
+          cfg.nat64,
+        );
 
       return new Response(notFoundPage(url.hostname, cfg.workerName), {
         status: 404,

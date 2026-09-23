@@ -6,6 +6,26 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      account_1:
+        description: "Deploy to Account 1 — rename this to your account's label, e.g. 'Deploy to Personal'"
+        required: false
+        type: boolean
+        default: true
+      account_2:
+        description: "Deploy to Account 2 — rename this to your account's label"
+        required: false
+        type: boolean
+        default: false
+      account_3:
+        description: "Deploy to Account 3 — rename this to your account's label"
+        required: false
+        type: boolean
+        default: false
+      account_4:
+        description: "Deploy to Account 4 — rename this to your account's label"
+        required: false
+        type: boolean
+        default: false
       workername:
         description: "Optional: Enter a specific Worker name for this run (lowercase only)"
         required: false
@@ -20,23 +40,83 @@ on:
         default: ""
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  plan:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
     steps:
-      - name: ▶ Checkout code
+      - name: ▶Build account matrix
+        id: build
+        env:
+          EVENT: ${{ github.event_name }}
+          SEL_1: ${{ inputs.account_1 }}
+          SEL_2: ${{ inputs.account_2 }}
+          SEL_3: ${{ inputs.account_3 }}
+          SEL_4: ${{ inputs.account_4 }}
+        run: |
+          ITEMS="[]"
+          add() { ITEMS=$(echo "$ITEMS" | jq --argjson n "$1" '. + [{"index": $n}]'); }
+
+          if [ "$EVENT" != "workflow_dispatch" ]; then
+            add 1
+          else
+            [ "$SEL_1" = "true" ] && add 1
+            [ "$SEL_2" = "true" ] && add 2
+            [ "$SEL_3" = "true" ] && add 3
+            [ "$SEL_4" = "true" ] && add 4
+          fi
+
+          if [ "$(echo "$ITEMS" | jq 'length')" = "0" ]; then
+            echo "::error::No Cloudflare account selected - tick at least one account checkbox and re-run."
+            exit 1
+          fi
+
+          echo "matrix=$(echo "$ITEMS" | jq -c '{include: .}')" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - name: ▶Checkout code
         uses: actions/checkout@v7
 
-      - name: ▶ Install Rust
+      - name: ▶Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: ▶ Install wasm-pack
+      - name: ▶Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: ▶ Resolve UUID
+      - name: ▶Resolve account credentials (#${{ matrix.index }})
+        id: account
+        env:
+          API_TOKEN: ${{ matrix.index == 1 && secrets.CLOUDFLARE_API_TOKEN || secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
+          ACCOUNT_ID: ${{ matrix.index == 1 && secrets.CLOUDFLARE_ACCOUNT_ID || secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
+          ACCOUNT_LABEL: ${{ matrix.index == 1 && vars.CLOUDFLARE_ACCOUNT_LABEL || vars[format('CLOUDFLARE_ACCOUNT_{0}_LABEL', matrix.index)] }}
+        run: |
+          if [ -z "$API_TOKEN" ] || [ -z "$ACCOUNT_ID" ]; then
+            if [ "${{ matrix.index }}" = "1" ]; then
+              TOKEN_NAME="CLOUDFLARE_API_TOKEN"
+              ID_NAME="CLOUDFLARE_ACCOUNT_ID"
+            else
+              TOKEN_NAME="CLOUDFLARE_API_TOKEN_${{ matrix.index }}"
+              ID_NAME="CLOUDFLARE_ACCOUNT_ID_${{ matrix.index }}"
+            fi
+            echo "::error::Account #${{ matrix.index }} is selected but its $TOKEN_NAME / $ID_NAME secrets aren't set."
+            exit 1
+          fi
+          LABEL="${ACCOUNT_LABEL:-Account ${{ matrix.index }}}"
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+
+      - name: ▶Resolve UUID
         id: uuidval
         env:
           INPUT_UUID: ${{ inputs.uuid }}
-          SECRET_UUID: ${{ secrets.UUID }}
+          SECRET_UUID: ${{ secrets[format('UUID_{0}', matrix.index)] || secrets.UUID }}
         run: |
           UUID_REGEX="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
           FALLBACK_UUID="be0ff9df-1468-41a0-8865-796d1c6800db"
@@ -64,11 +144,11 @@ jobs:
           echo "uuid_masked=$UUID_MASKED" >> "$GITHUB_OUTPUT"
           echo "uuid=$UUID_VALUE" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Resolve PROXYIP
+      - name: ▶Resolve PROXYIP
         id: proxyval
         env:
           INPUT_PROXYIP: ${{ inputs.proxyip }}
-          SECRET_PROXYIP: ${{ secrets.PROXYIP }}
+          SECRET_PROXYIP: ${{ secrets[format('PROXYIP_{0}', matrix.index)] || secrets.PROXYIP }}
         run: |
           if [ -n "$INPUT_PROXYIP" ]; then
             PROXY_VALUE="$INPUT_PROXYIP"
@@ -79,23 +159,26 @@ jobs:
           fi
           echo "proxyip=$PROXY_VALUE" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Resolve worker name
+      - name: ▶Resolve worker name
         id: worker
+        env:
+          SECRET_WORKERNAME: ${{ matrix.index == 1 && secrets.WORKERNAME || secrets[format('WORKERNAME_{0}', matrix.index)] }}
         run: |
           DEFAULT_NAME=$(grep -m1 '^name' wrangler.toml | sed -E 's/name[[:space:]]*=[[:space:]]*"(.*)"/\1/')
           NAME="${{ inputs.workername }}"
+          if [ -z "$NAME" ]; then NAME="$SECRET_WORKERNAME"; fi
           if [ -z "$NAME" ]; then NAME="$DEFAULT_NAME"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Encode panel
+      - name: ▶Encode panel
         run: base64 -w0 index.html > src/panel.b64
 
-      - name: "▶ Deploy via Wrangler Action (${{ steps.worker.outputs.name }})"
+      - name: "▶Deploy via Wrangler Action (${{ steps.worker.outputs.name }} → ${{ steps.account.outputs.label }})"
         id: deploy
         uses: cloudflare/wrangler-action@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ matrix.index == 1 && secrets.CLOUDFLARE_API_TOKEN || secrets[format('CLOUDFLARE_API_TOKEN_{0}', matrix.index)] }}
+          accountId: ${{ matrix.index == 1 && secrets.CLOUDFLARE_ACCOUNT_ID || secrets[format('CLOUDFLARE_ACCOUNT_ID_{0}', matrix.index)] }}
           command: deploy --name ${{ steps.worker.outputs.name }}
           vars: |
             UUID
@@ -106,42 +189,43 @@ jobs:
           PROXYIP: ${{ steps.proxyval.outputs.proxyip }}
           WORKERNAME: ${{ steps.worker.outputs.name }}
 
-      - name: ▶ Deployment Summary
+      - name: ▶Deployment Summary
         run: |
           BASE_URL="${{ steps.deploy.outputs.deployment-url }}"
           BASE_URL="${BASE_URL%/}"
           {
-            echo "## 🟢 Deployment Successful"
+            echo "## 🟢 Deployment Successful — ${{ steps.account.outputs.label }}"
             echo ""
             echo "### 📥 Deployment"
             echo ""
             echo "| Property | Value |"
             echo "|:-----|:-----|"
+            echo "| **Account** | ${{ steps.account.outputs.label }} (slot ${{ matrix.index }}) |"
             echo "| **Worker** | \`${{ steps.worker.outputs.name }}\` |"
             echo "| **Base URL** | $BASE_URL |"
             echo "| **Status** | Deployed successfully |"
             echo ""
             echo "### ⚙️ Configuration"
             echo ""
-            echo "| Property | Value |"
+            echo "| **Property** | **Value** |"
             echo "|:-----|:-----|"
-            echo "| **PROXYIP** | \`${{ steps.proxyval.outputs.proxyip }}\` |"
-            echo "| **UUID** | \`${{ steps.uuidval.outputs.uuid_masked }}\` |"
+            echo "| PROXYIP | \`${{ steps.proxyval.outputs.proxyip }}\` |"
+            echo "| UUID | \`${{ steps.uuidval.outputs.uuid_masked }}\` |"
             echo ""
             echo "### 🔐 Access to panel"
             echo ""
             echo "Your UUID is not displayed because this repository is public."
             echo ""
-            echo "To access the panel:"
+            echo "**To access the panel:**"
             echo ""
             echo "\`$BASE_URL/<UUID>\`"
             echo ""
-            echo "Get your UUID from:"
+            echo "**Get your UUID from:**"
             echo ""
             echo "☁️ Cloudflare Dashboard"
             echo "→ Workers & Pages"
             echo "→ **${{ steps.worker.outputs.name }}**"
             echo "→ Settings → Variables and Secrets"
             echo ""
-            echo "💡 [Open Cloudflare Dashboard](https://dash.cloudflare.com/?to=/:account/workers-and-pages)"
+            echo "💡 [**Open Cloudflare Dashboard**](https://dash.cloudflare.com/?to=/:account/workers/services/view/${{ steps.worker.outputs.name }}/production/settings)"
           } >> "$GITHUB_STEP_SUMMARY"

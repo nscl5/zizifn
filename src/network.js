@@ -2,7 +2,52 @@ import { connect } from "cloudflare:sockets";
 import { processHeader } from "../pkg/zr_wasm.js";
 import { CONST, safeFetch } from "./core.js";
 
+const IPV4_REGEX = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+async function resolveIPv4(hostname) {
+  if (IPV4_REGEX.test(hostname)) return hostname;
+  try {
+    const resp = await safeFetch(
+      `https://1.1.1.1/dns-query?name=${encodeURIComponent(hostname)}&type=A`,
+      { headers: { accept: "application/dns-json" } },
+      4000,
+    );
+    const data = await resp.json();
+    const answer = (data.Answer || []).find((a) => a.type === 1);
+    return answer ? answer.data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function toNAT64Address(ipv4) {
+  if (!ipv4 || !IPV4_REGEX.test(ipv4)) return null;
+  const octets = ipv4.split(".").map(Number);
+  if (octets.some((n) => n < 0 || n > 255)) return null;
+  const hex = octets.map((n) => n.toString(16).padStart(2, "0"));
+  return `64:ff9b::${hex[0]}${hex[1]}:${hex[2]}${hex[3]}`;
+}
+
+function parsePathOverrides(url) {
+  const overrides = {};
+  for (const [rawKey, rawValue] of url.searchParams) {
+    const key = rawKey.toLowerCase();
+    if (key === "nat64") {
+      overrides.nat64 = rawValue.toLowerCase() === "on";
+    } else if (key === "proxyip" || key === "proxyips") {
+      overrides.proxyPool = rawValue
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+  return overrides;
+}
+
 export async function ProtocolOverWSHandler(request, config) {
+  const overrides = parsePathOverrides(new URL(request.url));
+  config = { ...config, ...overrides };
+
   const webSocketPair = new WebSocketPair();
   const [client, webSocket] = Object.values(webSocketPair);
   webSocket.accept();
@@ -99,7 +144,7 @@ async function HandleTCPOutBound(
 
   async function retryWithPool(pool, index) {
     if (index >= pool.length) {
-      safeCloseWebSocket(webSocket);
+      await retryWithNAT64();
       return;
     }
     const [proxyHost, proxyPort = "443"] = pool[index].split(":");
@@ -114,6 +159,26 @@ async function HandleTCPOutBound(
       () => retryWithPool(pool, index + 1),
       log,
     );
+  }
+
+  async function retryWithNAT64() {
+    if (config.nat64 === false) {
+      safeCloseWebSocket(webSocket);
+      return;
+    }
+    const ipv4 = await resolveIPv4(addressRemote);
+    const nat64Address = toNAT64Address(ipv4);
+    if (!nat64Address) {
+      log(`NAT64 fallback failed: could not resolve ${addressRemote}`);
+      safeCloseWebSocket(webSocket);
+      return;
+    }
+    log(`falling back to NAT64: ${nat64Address}`);
+    const tcpSocket = await connectAndWrite(nat64Address, portRemote);
+    tcpSocket.closed
+      .catch((error) => console.log("NAT64 tcpSocket closed error", error))
+      .finally(() => safeCloseWebSocket(webSocket));
+    RemoteSocketToWS(tcpSocket, webSocket, protocolResponseHeader, null, log);
   }
 
   const tcpSocket = await connectAndWrite(addressRemote, portRemote);
