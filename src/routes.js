@@ -19,7 +19,16 @@ import panelB64 from "./panel.b64";
 const panelBytes = Uint8Array.from(atob(panelB64), (c) => c.charCodeAt(0));
 const panelHtml = new TextDecoder("utf-8").decode(panelBytes);
 
-export async function handleIpSubscription(request, core, userID, hostName, ctx, enhanced = false, cfg = null, env = null) {
+export async function handleIpSubscription(
+  request,
+  core,
+  userID,
+  hostName,
+  ctx,
+  enhanced = false,
+  cfg = null,
+  env = null,
+) {
   const url = new URL(request.url);
   const subName = url.searchParams.get("name");
 
@@ -29,10 +38,6 @@ export async function handleIpSubscription(request, core, userID, hostName, ctx,
   const httpPorts = [80, 8080, 8880, 2052, 2082, 2086, 2095];
   let links = [];
   const isPagesDeployment = hostName.endsWith(".pages.dev");
-  // Only xray has a "tcp" preset in CORE_PRESETS (see core.js); "sb" only
-  // defines "tls". Including core === "sb" here used to make buildLink()
-  // reach CORE_PRESETS.sb.tcp (undefined) and throw, silently truncating
-  // the whole /sb subscription partway through the IP loop below.
   const includeTcp = core === "xray" && enhanced && !isPagesDeployment;
 
   mainDomains.forEach((domain, i) => {
@@ -107,9 +112,6 @@ export async function handleIpSubscription(request, core, userID, hostName, ctx,
     console.error("Cached IP fetch failed", e);
   }
 
-  // NAT64 fallback config: identical to the plain worker-domain config,
-  // but forces nat64=on in the ws path so it works even if the server
-  // default (or the panel toggle) has it off.
   links.push(
     buildLink({
       core,
@@ -124,25 +126,9 @@ export async function handleIpSubscription(request, core, userID, hostName, ctx,
     }),
   );
 
-  // ProxyIP configs, pulled from the same pool the ProxyIPs panel card
-  // uses (see buildProxyIpPool above). Each tag encodes country + whether
-  // that pool host is domain- or IP-backed; makeName() appends the
-  // transport (TLS/TCP) on top of that.
-  //
-  // Selection guarantees at least one config per country (the country's
-  // lowest-risk entry), then tops up with the next best-scored entries
-  // overall until at least 10 configs are included in total - so a
-  // country never drops out of the subscription just because its best IP
-  // didn't make an arbitrary top-10 cut.
-  //
-  // Each entry's port + TLS/TCP is picked at random via
-  // pickRandomProxyPort(), the same way the ProxyIPs panel card
-  // randomizes its own configs (see buildProxyEntryConfigs below) - so a
-  // subscription refresh doesn't hand back the exact same "port 443,
-  // TLS" pair for every entry, and TCP variants show up here too.
   if (cfg) {
     try {
-      const pool = await buildProxyIpPool(cfg, ctx);
+      const pool = await buildProxyIpPool(cfg, ctx, hostName);
       const sorted = [...pool].sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
 
       const selected = [];
@@ -173,7 +159,19 @@ export async function handleIpSubscription(request, core, userID, hostName, ctx,
         const tag = proxyEntryTag(entry, i);
         const overrides = { proxyIP: `${entry.ip}:${entry.port}` };
         const { proto, port } = pickRandomProxyPort(isPagesDeployment);
-        links.push(buildLink({ core, proto, userID, hostName, address: hostName, port, tag, enhanced, overrides }));
+        links.push(
+          buildLink({
+            core,
+            proto,
+            userID,
+            hostName,
+            address: hostName,
+            port,
+            tag,
+            enhanced,
+            overrides,
+          }),
+        );
       });
     } catch (e) {
       console.error("ProxyIP pool for subscription failed", e);
@@ -195,7 +193,7 @@ export async function handleMyConnection(request, env, ctx) {
 
   try {
     const harmonicaRes = await safeFetch(
-      `https://api.harmonica.workers.dev/api/${clientIP}`,
+      `https://harmonica.serpents.workers.dev/${clientIP}`,
       {
         headers: {
           "User-Agent":
@@ -256,23 +254,24 @@ export async function handleResolveDomain(request) {
   }
 }
 
-// Backs the "Proxy Server" info panel. Used to be two client-side round
-// trips (GET /resolve-domain, then the browser itself calling
-// https://ipapi.co/...) - meaning that second lookup ran from the
-// visitor's own IP/browser, not the worker's. This does the DNS
-// resolution + geolocation server-side instead, in one call, reusing the
-// same Cache-API-backed per-IP cache as the ProxyIPs pool.
 export async function handleProxyHostInfo(request, env, ctx) {
   const url = new URL(request.url);
   const host = url.searchParams.get("host");
   const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
-  if (!host) return new Response(JSON.stringify({ error: true, reason: "Missing host" }), { status: 400, headers });
+  if (!host)
+    return new Response(JSON.stringify({ error: true, reason: "Missing host" }), {
+      status: 400,
+      headers,
+    });
 
   try {
     let ip = host;
     if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) {
       const resolved = await resolveIPv4ViaDoH(host);
-      if (!resolved) return new Response(JSON.stringify({ error: true, reason: "Could not resolve host" }), { headers });
+      if (!resolved)
+        return new Response(JSON.stringify({ error: true, reason: "Could not resolve host" }), {
+          headers,
+        });
       ip = resolved;
     }
     const meta = await getIpMeta(ctx, ip);
@@ -291,16 +290,10 @@ export async function handleProxyHostInfo(request, env, ctx) {
   }
 }
 
-// harmonica.workers.dev already returns full geo/ISP data (its `details`
-// object: country, country_code, city, isp, organization, ...) right
-// alongside the fraud score (`info`), so one call here covers what used
-// to take two separate outbound requests (a dedicated geolocation API
-// plus this one for risk). One request is also just less exposed to
-// rate-limiting than two.
 async function FetchIPData(ip) {
   try {
     const res = await safeFetch(
-      `https://api.harmonica.workers.dev/api/${ip}`,
+      `https://harmonica.serpents.workers.dev/${ip}`,
       {
         headers: {
           "User-Agent":
@@ -330,31 +323,22 @@ async function FetchIPData(ip) {
   }
 }
 
-// Cache-API-backed cache for a single IP's geo+risk lookup (6h TTL, same
-// as the pool cache below). A later refresh within that window reuses
-// it instead of re-hitting harmonica, which is both what keeps the panel
-// from silently losing already-known IPs on refresh and what keeps it
-// from re-tripping that service's rate limits every time. A
-// failed/"Unknown" lookup is deliberately NOT cached, so the next
-// refresh gets to retry it rather than being stuck with "Unknown"
-// forever. Unlike a KV-backed cache, this expires on its own - so an IP
-// that was only ever seen because a user typed in a wrong/malicious
-// ProxyIP domain ages back out instead of leaving bad data around
-// indefinitely for whoever looks that IP up next.
 async function getIpMeta(ctx, ip) {
   const cacheKey = `ipmeta:${ip}`;
   const cached = await cacheGetJson(cacheKey);
   if (cached) return cached;
-  const meta = (await FetchIPData(ip)) || { country: "Unknown", countryCode: "", city: "", org: "", score: 0, risk: "Unknown" };
+  const meta = (await FetchIPData(ip)) || {
+    country: "Unknown",
+    countryCode: "",
+    city: "",
+    org: "",
+    score: 0,
+    risk: "Unknown",
+  };
   if (meta.country && meta.country !== "Unknown") await cachePutJson(ctx, cacheKey, meta);
   return meta;
 }
 
-// Same idea as getIpMeta, but for a batch of entries that already came
-// back WITH geo/risk data attached (fetchDomainIpPool's response) - an
-// already-cached IP's stored data wins over whatever this particular
-// response says, so a domain's IPs stay stable across refreshes even if
-// the upstream pool API's answer for one of them jitters or degrades.
 async function enrichWithPersistentCache(ctx, entries) {
   return Promise.all(
     entries.map(async (entry) => {
@@ -367,15 +351,6 @@ async function enrichWithPersistentCache(ctx, entries) {
   );
 }
 
-// Resolves one ProxyIP pool host into its enriched entries. A literal IP
-// host is just itself (single geolocate + risk lookup, cached). A
-// domain host goes through fetchDomainIpPool, which mirrors the domain's
-// whole current IP set - with risk + geo already attached - in one call;
-// if that service is down we fall back to a single DoH A-record lookup
-// so the feature still degrades gracefully instead of failing outright.
-// Note this always re-resolves which IPs currently back the host (so an
-// IP removed from the domain naturally stops appearing); only the
-// per-IP geo/risk metadata is cached, via getIpMeta/enrichWithPersistentCache.
 async function resolveProxyPoolHost(host, port, ctx) {
   const isIPHost = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
 
@@ -409,18 +384,9 @@ async function resolveProxyPoolHost(host, port, ctx) {
   }));
 }
 
-// Resolves every host in the configured ProxyIP pool (never the worker's
-// own domain - that's the client entry point, not a ProxyIP) to its
-// backing IPv4 address(es), each already carrying country + risk info.
-// Pool hosts are resolved in parallel (each can itself involve a slow
-// upstream call), and the flattened, enriched result is cached for 6h so
-// both the panel card and the subscription builder share one lookup -
-// unless forceRefresh is set (the panel's Refresh button), which skips
-// straight to re-resolving every host's CURRENT IP set while still
-// reusing already-known per-IP geo/risk data via the Cache API above.
-async function buildProxyIpPool(cfg, ctx, forceRefresh = false) {
+async function buildProxyIpPool(cfg, ctx, hostName, forceRefresh = false) {
   const cache = caches.default;
-  const poolCacheKey = new Request("https://cf-proxyip-pool-cache.local");
+  const poolCacheKey = new Request(`https://cf-proxyip-pool-cache.local/${hostName}`);
   if (ctx && !forceRefresh) {
     const cachedRes = await cache.match(poolCacheKey);
     if (cachedRes) return cachedRes.json();
@@ -438,7 +404,9 @@ async function buildProxyIpPool(cfg, ctx, forceRefresh = false) {
       return true;
     });
 
-  const results = (await Promise.all(hosts.map(({ host, port }) => resolveProxyPoolHost(host, port, ctx)))).flat();
+  const results = (
+    await Promise.all(hosts.map(({ host, port }) => resolveProxyPoolHost(host, port, ctx)))
+  ).flat();
 
   if (ctx && results.length) {
     const cacheResponse = new Response(JSON.stringify(results), {
@@ -450,27 +418,15 @@ async function buildProxyIpPool(cfg, ctx, forceRefresh = false) {
   return results;
 }
 
-// Turns a resolved+enriched pool entry into a config tag that says, at a
-// glance: which country it's in, whether it came from a domain-backed
-// pool (which may hold many more IPs than we show) or a fixed IP, and —
-// once passed through buildLink/makeName — which transport it uses.
 function proxyEntryTag(entry, index) {
-  const countryTag = entry.countryCode ? entry.countryCode.toUpperCase() : (entry.country || "XX").slice(0, 2).toUpperCase();
+  const countryTag = entry.countryCode
+    ? entry.countryCode.toUpperCase()
+    : (entry.country || "XX").slice(0, 2).toUpperCase();
   const flag = countryCodeToFlagEmoji(entry.countryCode);
   const hostTag = entry.hostType === "ip" ? "IP" : "Domain";
   return `${flag}${countryTag}-${hostTag}-${index + 1}`;
 }
 
-// Builds a ready-to-copy config pair (Xray + Singbox) for one resolved
-// pool entry, tagged the same way the /xray and /sb subscriptions tag
-// their own top-10 ProxyIP configs (see proxyEntryTag above), so a name
-// like "🇺🇸US-IP-1-TLS" means the same thing everywhere it shows up.
-//
-// The client-facing port+transport (NOT the proxyIP override, which
-// stays entry.ip:entry.port) is randomized per config, per call - so a
-// refresh doesn't hand back the exact same "port 443, TLS" pair for
-// every single entry. See pickRandomProxyPort() in core.js for why
-// *.pages.dev only ever gets a TLS port back.
 function buildProxyEntryConfigs(entry, hostName, userID, index) {
   const tag = proxyEntryTag(entry, index);
   const proxyIP = `${entry.ip}:${entry.port}`;
@@ -510,17 +466,6 @@ function buildProxyEntryConfigs(entry, hostName, userID, index) {
   };
 }
 
-// Builds the ProxyIPs panel card data. Entries are grouped two levels
-// deep:
-//   - by country, so the panel can render one button per country (lowest
-//     risk first, see the outer sort below);
-//   - within a country, by pool host, so a single domain that resolves to
-//     several IPs in that country becomes ONE dropdown (defaulting to its
-//     lowest-risk IP) instead of several indistinguishable flat rows.
-// Every IP gets 1-2 ready-to-use configs whose ws path carries a
-// `proxyip=` override (see withConfigOverrides / core.js and
-// parsePathOverrides / network.js) so that IP becomes that config's sole
-// fallback route.
 export async function handleProxyIpsInfo(request, cfg, hostName, ctx, env) {
   const headers = {
     "Content-Type": "application/json",
@@ -530,12 +475,6 @@ export async function handleProxyIpsInfo(request, cfg, hostName, ctx, env) {
 
   try {
     const url = new URL(request.url);
-    // The panel's Refresh button sends ?refresh=1 to bypass both response
-    // caches below and re-resolve every pool host's CURRENT IP set (so an
-    // IP a domain no longer resolves to drops off, and a newly-added one
-    // shows up) - see buildProxyIpPool. Already-known IPs still don't
-    // re-hit harmonica though: that's what the
-    // getIpMeta/enrichWithPersistentCache cache in buildProxyIpPool is for.
     const forceRefresh = url.searchParams.get("refresh") === "1";
 
     const cache = caches.default;
@@ -545,19 +484,28 @@ export async function handleProxyIpsInfo(request, cfg, hostName, ctx, env) {
       if (cached) return cached;
     }
 
-    const enriched = await buildProxyIpPool(cfg, ctx, forceRefresh);
+    const enriched = await buildProxyIpPool(cfg, ctx, hostName, forceRefresh);
 
     const countryMap = new Map();
     enriched.forEach((entry) => {
       const countryKey = entry.country || "Unknown";
       if (!countryMap.has(countryKey)) {
-        countryMap.set(countryKey, { country: countryKey, countryCode: entry.countryCode || "", hostsMap: new Map() });
+        countryMap.set(countryKey, {
+          country: countryKey,
+          countryCode: entry.countryCode || "",
+          hostsMap: new Map(),
+        });
       }
       const countryGroup = countryMap.get(countryKey);
-      if (!countryGroup.countryCode && entry.countryCode) countryGroup.countryCode = entry.countryCode;
+      if (!countryGroup.countryCode && entry.countryCode)
+        countryGroup.countryCode = entry.countryCode;
       const hostKey = entry.host;
       if (!countryGroup.hostsMap.has(hostKey)) {
-        countryGroup.hostsMap.set(hostKey, { host: hostKey, hostType: entry.hostType, entries: [] });
+        countryGroup.hostsMap.set(hostKey, {
+          host: hostKey,
+          hostType: entry.hostType,
+          entries: [],
+        });
       }
       countryGroup.hostsMap.get(hostKey).entries.push(entry);
     });
@@ -566,11 +514,15 @@ export async function handleProxyIpsInfo(request, cfg, hostName, ctx, env) {
       .map((countryGroup) => {
         const hosts = [...countryGroup.hostsMap.values()]
           .map((hostGroup) => {
-            const sortedEntries = [...hostGroup.entries].sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+            const sortedEntries = [...hostGroup.entries].sort(
+              (a, b) => (a.score ?? 999) - (b.score ?? 999),
+            );
             return {
               host: hostGroup.host,
               hostType: hostGroup.hostType,
-              entries: sortedEntries.map((entry, i) => buildProxyEntryConfigs(entry, hostName, cfg.userID, i)),
+              entries: sortedEntries.map((entry, i) =>
+                buildProxyEntryConfigs(entry, hostName, cfg.userID, i),
+              ),
             };
           })
           .sort((a, b) => (a.entries[0]?.score ?? 999) - (b.entries[0]?.score ?? 999));
@@ -585,9 +537,6 @@ export async function handleProxyIpsInfo(request, cfg, hostName, ctx, env) {
           hosts,
         };
       })
-      // Country - risk, ascending: the country holding the single lowest-risk
-      // IP overall is shown (as a button) first. Countries with no usable
-      // score (lookup failed for every entry) sort to the end.
       .sort((a, b) => (a.lowestScore ?? 999) - (b.lowestScore ?? 999));
 
     const response = new Response(JSON.stringify({ groups }), { headers });
@@ -629,12 +578,6 @@ export async function handleConfigPage(userID, hostName, proxyAddress, workerNam
     enhanced: true,
   });
 
-  // Precomputed on/off pair for the NAT64 card's copy button. Building
-  // both full links here (instead of patching the plain xray-config link
-  // client-side, which left the copied config's name unchanged and made
-  // it look identical to the regular config) guarantees the copied
-  // config is always properly tagged "NAT64" and keeps every other field
-  // (alpn included) exactly as buildLink/CORE_PRESETS defines it.
   const nat64On = buildLink({
     core: "xray",
     proto: "tls",
@@ -667,20 +610,23 @@ export async function handleConfigPage(userID, hostName, proxyAddress, workerNam
   const subProxyIpsUrl = `https://${hostName}/proxy-ips/${userID}`;
 
   const finalHTML = panelHtml
-  .replace(/{{PROXY_ADDRESS}}/g, proxyAddress)
-  .replace(/{{CONFIG_DREAM}}/g, dream)
-  .replace(/{{CONFIG_FREEDOM}}/g, freedom)
-  .replace(/{{CONFIG_PATTNG}}/g, pattng)
-  .replace(/{{NAT64_DEFAULT}}/g, nat64 ? "on" : "off")
-  .replace(/{{CONFIG_NAT64_ON}}/g, nat64On)
-  .replace(/{{CONFIG_NAT64_OFF}}/g, nat64Off)
-  .replace(/{{URL_PROXYIPS}}/g, subProxyIpsUrl)
-  .replace(/{{URL_WORKER_SETTINGS}}/g, settingsUrl)
-  .replace(/{{URL_V2RAYNG_ENHANCED}}/g, `${SENS.v2rayng()}${subXrayUrlVEnhanced}`)
-  .replace(/{{URL_V2RAYNG}}/g, `${SENS.v2rayng()}${subXrayUrlV}`)
-  .replace(/{{URL_CLASH}}/g, `${SENS.clash()}${encodeURIComponent(subClashUrl)}`)
-  .replace(/{{URL_HIDDIFY}}/g, `${SENS.hiddify()}${encodeURIComponent(subXrayUrlH)}`)
-  .replace(/{{URL_EXCLAVE}}/g, `${SENS.exclave()}${encodeURIComponent(subSbUrl)}&name=${encodedSubName}`);
+    .replace(/{{PROXY_ADDRESS}}/g, proxyAddress)
+    .replace(/{{CONFIG_DREAM}}/g, dream)
+    .replace(/{{CONFIG_FREEDOM}}/g, freedom)
+    .replace(/{{CONFIG_PATTNG}}/g, pattng)
+    .replace(/{{NAT64_DEFAULT}}/g, nat64 ? "on" : "off")
+    .replace(/{{CONFIG_NAT64_ON}}/g, nat64On)
+    .replace(/{{CONFIG_NAT64_OFF}}/g, nat64Off)
+    .replace(/{{URL_PROXYIPS}}/g, subProxyIpsUrl)
+    .replace(/{{URL_WORKER_SETTINGS}}/g, settingsUrl)
+    .replace(/{{URL_V2RAYNG_ENHANCED}}/g, `${SENS.v2rayng()}${subXrayUrlVEnhanced}`)
+    .replace(/{{URL_V2RAYNG}}/g, `${SENS.v2rayng()}${subXrayUrlV}`)
+    .replace(/{{URL_CLASH}}/g, `${SENS.clash()}${encodeURIComponent(subClashUrl)}`)
+    .replace(/{{URL_HIDDIFY}}/g, `${SENS.hiddify()}${encodeURIComponent(subXrayUrlH)}`)
+    .replace(
+      /{{URL_EXCLAVE}}/g,
+      `${SENS.exclave()}${encodeURIComponent(subSbUrl)}&name=${encodedSubName}`,
+    );
 
   return new Response(finalHTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
