@@ -46,7 +46,7 @@ jobs:
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
     steps:
-      - name: ▶ Build account matrix
+      - name: ▶Build account matrix
         id: build
         env:
           EVENT: ${{ github.event_name }}
@@ -112,7 +112,7 @@ jobs:
           LABEL="${ACCOUNT_LABEL:-Account ${{ matrix.index }}}"
           echo "label=$LABEL" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Resolve UUID
+      - name: ▶Resolve UUID
         id: uuidval
         env:
           INPUT_UUID: ${{ inputs.uuid }}
@@ -144,7 +144,7 @@ jobs:
           echo "uuid_masked=$UUID_MASKED" >> "$GITHUB_OUTPUT"
           echo "uuid=$UUID_VALUE" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Resolve PROXYIP
+      - name: ▶Resolve PROXYIP
         id: proxyval
         env:
           INPUT_PROXYIP: ${{ inputs.proxyip }}
@@ -159,7 +159,7 @@ jobs:
           fi
           echo "proxyip=$PROXY_VALUE" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Resolve worker name
+      - name: ▶Resolve worker name
         id: worker
         env:
           SECRET_WORKERNAME: ${{ matrix.index == 1 && secrets.WORKERNAME || secrets[format('WORKERNAME_{0}', matrix.index)] }}
@@ -170,10 +170,10 @@ jobs:
           if [ -z "$NAME" ]; then NAME="$DEFAULT_NAME"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Encode panel
+      - name: ▶Encode panel
         run: base64 -w0 index.html > src/panel.b64
 
-      - name: "▶ Deploy via Wrangler Action (${{ steps.worker.outputs.name }} → ${{ steps.account.outputs.label }})"
+      - name: "▶Deploy via Wrangler Action (${{ steps.worker.outputs.name }} → ${{ steps.account.outputs.label }})"
         id: deploy
         uses: cloudflare/wrangler-action@v4
         with:
@@ -189,7 +189,7 @@ jobs:
           PROXYIP: ${{ steps.proxyval.outputs.proxyip }}
           WORKERNAME: ${{ steps.worker.outputs.name }}
 
-      - name: ▶ Deployment Summary
+      - name: ▶Deployment Summary
         run: |
           BASE_URL="${{ steps.deploy.outputs.deployment-url }}"
           BASE_URL="${BASE_URL%/}"
@@ -207,25 +207,25 @@ jobs:
             echo ""
             echo "### ⚙️ Configuration"
             echo ""
-            echo "| Property | Value |"
+            echo "| **Property** | **Value** |"
             echo "|:-----|:-----|"
-            echo "| **PROXYIP** | \`${{ steps.proxyval.outputs.proxyip }}\` |"
-            echo "| **UUID** | \`${{ steps.uuidval.outputs.uuid_masked }}\` |"
+            echo "| PROXYIP | \`${{ steps.proxyval.outputs.proxyip }}\` |"
+            echo "| UUID | \`${{ steps.uuidval.outputs.uuid_masked }}\` |"
             echo ""
             echo "### 🔐 Access to panel"
             echo ""
             echo "Your UUID is not displayed because this repository is public."
             echo ""
-            echo "To access the panel:"
+            echo "**To access the panel:**"
             echo ""
             echo "\`$BASE_URL/<UUID>\`"
             echo ""
-            echo "Get your UUID from:"
+            echo "**Get your UUID from:**"
             echo ""
             echo "☁️ Cloudflare Dashboard"
             echo "→ Workers & Pages"
             echo "→ **${{ steps.worker.outputs.name }}**"
             echo "→ Settings → Variables and Secrets"
             echo ""
-            echo "💡 [Open Cloudflare Dashboard](https://dash.cloudflare.com/?to=/:account/workers/services/view/${{ steps.worker.outputs.name }}/production/settings)"
+            echo "💡 [**Open Cloudflare Dashboard**](https://dash.cloudflare.com/?to=/:account/workers/services/view/${{ steps.worker.outputs.name }}/production/settings)"
           } >> "$GITHUB_STEP_SUMMARY"
