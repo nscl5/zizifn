@@ -38,38 +38,6 @@ on:
         description: "Optional: Enter a specific UUID for this run (leave blank to generate a random one)"
         required: false
         default: ""
-      placement_mode:
-        description: "Optional: Worker Placement — off / smart / region / host / hostname"
-        required: false
-        type: choice
-        options:
-          - off
-          - smart
-          - region
-          - host
-          - hostname
-        default: off
-      placement_provider:
-        description: "Only used when placement_mode = region: cloud provider"
-        required: false
-        type: choice
-        options:
-          - aws
-          - gcp
-          - azure
-        default: aws
-      placement_region:
-        description: "Only used when placement_mode = region: region code, e.g. us-east-1 (aws) / us-east4 (gcp) / westeurope (azure)"
-        required: false
-        default: ""
-      placement_host:
-        description: "Only used when placement_mode = host: host:port to probe over TCP, e.g. db.example.com:5432"
-        required: false
-        default: ""
-      placement_hostname:
-        description: "Only used when placement_mode = hostname: hostname to probe over HTTP, e.g. api.example.com"
-        required: false
-        default: ""
 
 jobs:
   plan:
@@ -191,56 +159,6 @@ jobs:
           fi
           echo "proxyip=$PROXY_VALUE" >> "$GITHUB_OUTPUT"
 
-      - name: ▶ Resolve Placement Hint
-        id: placementval
-        env:
-          INPUT_MODE: ${{ inputs.placement_mode }}
-          INPUT_PROVIDER: ${{ inputs.placement_provider }}
-          INPUT_REGION: ${{ inputs.placement_region }}
-          INPUT_HOST: ${{ inputs.placement_host }}
-          INPUT_HOSTNAME: ${{ inputs.placement_hostname }}
-          SECRET_MODE: ${{ secrets.PLACEMENT_MODE }}
-          SECRET_PROVIDER: ${{ secrets.PLACEMENT_PROVIDER }}
-          SECRET_REGION: ${{ secrets.PLACEMENT_REGION }}
-          SECRET_HOST: ${{ secrets.PLACEMENT_HOST }}
-          SECRET_HOSTNAME: ${{ secrets.PLACEMENT_HOSTNAME }}
-        run: |
-          MODE="${INPUT_MODE:-$SECRET_MODE}"
-          MODE="${MODE:-off}"
-          case "$MODE" in
-            off|smart|region|host|hostname) ;;
-            *) MODE="off" ;;
-          esac
-
-          PROVIDER="${INPUT_PROVIDER:-$SECRET_PROVIDER}"
-          PROVIDER="${PROVIDER:-aws}"
-          case "$PROVIDER" in
-            aws|gcp|azure) ;;
-            *) PROVIDER="aws" ;;
-          esac
-
-          REGION="${INPUT_REGION:-$SECRET_REGION}"
-          HOST_VALUE="${INPUT_HOST:-$SECRET_HOST}"
-          HOSTNAME_VALUE="${INPUT_HOSTNAME:-$SECRET_HOSTNAME}"
-
-          KEY=""
-          VALUE=""
-          SUMMARY="off"
-
-          if [ "$MODE" = "smart" ]; then
-            KEY="mode"; VALUE="smart"; SUMMARY="smart"
-          elif [ "$MODE" = "region" ] && [ -n "$REGION" ]; then
-            KEY="region"; VALUE="${PROVIDER}:${REGION}"; SUMMARY="region (${VALUE})"
-          elif [ "$MODE" = "host" ] && [ -n "$HOST_VALUE" ]; then
-            KEY="host"; VALUE="$HOST_VALUE"; SUMMARY="host (${VALUE})"
-          elif [ "$MODE" = "hostname" ] && [ -n "$HOSTNAME_VALUE" ]; then
-            KEY="hostname"; VALUE="$HOSTNAME_VALUE"; SUMMARY="hostname (${VALUE})"
-          fi
-
-          echo "key=$KEY" >> "$GITHUB_OUTPUT"
-          echo "value=$VALUE" >> "$GITHUB_OUTPUT"
-          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
-
       - name: ▶ Resolve worker name
         id: worker
         env:
@@ -254,15 +172,6 @@ jobs:
 
       - name: ▶ Encode panel
         run: base64 -w0 index.html > src/panel.b64
-
-      - name: ▶ Apply Placement Hint
-        if: steps.placementval.outputs.key != ''
-        run: |
-          {
-            echo ""
-            echo "[placement]"
-            echo "${{ steps.placementval.outputs.key }} = \"${{ steps.placementval.outputs.value }}\""
-          } >> wrangler.toml
 
       - name: "▶ Deploy via Wrangler Action (${{ steps.worker.outputs.name }} → ${{ steps.account.outputs.label }})"
         id: deploy
@@ -302,7 +211,6 @@ jobs:
             echo "|:-----|:-----|"
             echo "| **PROXYIP** | \`${{ steps.proxyval.outputs.proxyip }}\` |"
             echo "| **UUID** | \`${{ steps.uuidval.outputs.uuid_masked }}\` |"
-            echo "| **Placement** | \`${{ steps.placementval.outputs.summary }}\` |"
             echo ""
             echo "### 🔐 Access to panel"
             echo ""
