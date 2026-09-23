@@ -4,8 +4,6 @@ import { CONST, safeFetch } from "./core.js";
 
 const IPV4_REGEX = /^\d{1,3}(\.\d{1,3}){3}$/;
 
-// Resolve a hostname to an IPv4 address via DNS-over-HTTPS.
-// Returns the input unchanged if it is already an IPv4 literal.
 async function resolveIPv4(hostname) {
   if (IPV4_REGEX.test(hostname)) return hostname;
   try {
@@ -22,8 +20,6 @@ async function resolveIPv4(hostname) {
   }
 }
 
-// Build the NAT64 IPv6 literal (64:ff9b::/96) that Cloudflare
-// translates back to the given IPv4 address on egress.
 function toNAT64Address(ipv4) {
   if (!ipv4 || !IPV4_REGEX.test(ipv4)) return null;
   const octets = ipv4.split(".").map(Number);
@@ -32,10 +28,6 @@ function toNAT64Address(ipv4) {
   return `64:ff9b::${hex[0]}${hex[1]}:${hex[2]}${hex[3]}`;
 }
 
-// Case-insensitive parser for optional per-connection overrides carried
-// in the ws path/query (e.g. ?nat64=on&proxyip=1.2.3.4:443, in any
-// letter-case). Lets a single config switch its own proxyIP or turn
-// NAT64 off without touching the worker's environment variables.
 function parsePathOverrides(url) {
   const overrides = {};
   for (const [rawKey, rawValue] of url.searchParams) {
@@ -169,9 +161,6 @@ async function HandleTCPOutBound(
     );
   }
 
-  // Last-resort fallback: no proxyIP worked (or none was configured),
-  // so translate the real destination into a NAT64 IPv6 address and
-  // let Cloudflare's own NAT64 gateway do the address translation.
   async function retryWithNAT64() {
     if (config.nat64 === false) {
       safeCloseWebSocket(webSocket);
