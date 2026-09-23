@@ -8,12 +8,27 @@ import {
   buildMainDomains,
   buildSubscriptionHeaders,
   buildSettingsUrl,
+  resolveIPv4ViaDoH,
+  fetchDomainIpPool,
+  countryCodeToFlagEmoji,
+  cacheGetJson,
+  cachePutJson,
+  pickRandomProxyPort,
 } from "./core.js";
 import panelB64 from "./panel.b64";
 const panelBytes = Uint8Array.from(atob(panelB64), (c) => c.charCodeAt(0));
 const panelHtml = new TextDecoder("utf-8").decode(panelBytes);
 
-export async function handleIpSubscription(request, core, userID, hostName, ctx, enhanced = false) {
+export async function handleIpSubscription(
+  request,
+  core,
+  userID,
+  hostName,
+  ctx,
+  enhanced = false,
+  cfg = null,
+  env = null,
+) {
   const url = new URL(request.url);
   const subName = url.searchParams.get("name");
 
@@ -23,7 +38,7 @@ export async function handleIpSubscription(request, core, userID, hostName, ctx,
   const httpPorts = [80, 8080, 8880, 2052, 2082, 2086, 2095];
   let links = [];
   const isPagesDeployment = hostName.endsWith(".pages.dev");
-  const includeTcp = (core === "sb" || (core === "xray" && enhanced)) && !isPagesDeployment;
+  const includeTcp = core === "xray" && enhanced && !isPagesDeployment;
 
   mainDomains.forEach((domain, i) => {
     links.push(
@@ -97,6 +112,72 @@ export async function handleIpSubscription(request, core, userID, hostName, ctx,
     console.error("Cached IP fetch failed", e);
   }
 
+  links.push(
+    buildLink({
+      core,
+      proto: "tls",
+      userID,
+      hostName,
+      address: hostName,
+      port: 443,
+      tag: "NAT64",
+      enhanced,
+      overrides: { nat64: true },
+    }),
+  );
+
+  if (cfg) {
+    try {
+      const pool = await buildProxyIpPool(cfg, ctx, hostName);
+      const sorted = [...pool].sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+
+      const selected = [];
+      const seenCountries = new Set();
+      for (const entry of sorted) {
+        const countryKey = entry.country || "Unknown";
+        if (!seenCountries.has(countryKey)) {
+          seenCountries.add(countryKey);
+          selected.push(entry);
+        }
+      }
+
+      const MIN_TOTAL = 10;
+      if (selected.length < MIN_TOTAL) {
+        const selectedIds = new Set(selected.map((e) => `${e.host}:${e.ip}`));
+        for (const entry of sorted) {
+          if (selected.length >= MIN_TOTAL) break;
+          const id = `${entry.host}:${entry.ip}`;
+          if (!selectedIds.has(id)) {
+            selected.push(entry);
+            selectedIds.add(id);
+          }
+        }
+      }
+      selected.sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+
+      selected.forEach((entry, i) => {
+        const tag = proxyEntryTag(entry, i);
+        const overrides = { proxyIP: `${entry.ip}:${entry.port}` };
+        const { proto, port } = pickRandomProxyPort(isPagesDeployment);
+        links.push(
+          buildLink({
+            core,
+            proto,
+            userID,
+            hostName,
+            address: hostName,
+            port,
+            tag,
+            enhanced,
+            overrides,
+          }),
+        );
+      });
+    } catch (e) {
+      console.error("ProxyIP pool for subscription failed", e);
+    }
+  }
+
   const headers = {
     "Content-Type": "text/plain;charset=utf-8",
     ...buildSubscriptionHeaders(subName),
@@ -112,7 +193,7 @@ export async function handleMyConnection(request, env, ctx) {
 
   try {
     const harmonicaRes = await safeFetch(
-      `https://api.harmonica.workers.dev/api/${clientIP}`,
+      `https://harmonica.serpents.workers.dev/${clientIP}`,
       {
         headers: {
           "User-Agent":
@@ -173,7 +254,301 @@ export async function handleResolveDomain(request) {
   }
 }
 
-export async function handleConfigPage(userID, hostName, proxyAddress, workerName) {
+export async function handleProxyHostInfo(request, env, ctx) {
+  const url = new URL(request.url);
+  const host = url.searchParams.get("host");
+  const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
+  if (!host)
+    return new Response(JSON.stringify({ error: true, reason: "Missing host" }), {
+      status: 400,
+      headers,
+    });
+
+  try {
+    let ip = host;
+    if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) {
+      const resolved = await resolveIPv4ViaDoH(host);
+      if (!resolved)
+        return new Response(JSON.stringify({ error: true, reason: "Could not resolve host" }), {
+          headers,
+        });
+      ip = resolved;
+    }
+    const meta = await getIpMeta(ctx, ip);
+    return new Response(
+      JSON.stringify({
+        ip,
+        city: meta.city || "",
+        country_name: meta.country,
+        country_code: meta.countryCode,
+        org: meta.org || "",
+      }),
+      { headers },
+    );
+  } catch (error) {
+    return new Response(JSON.stringify({ error: true, reason: error.toString() }), { headers });
+  }
+}
+
+async function FetchIPData(ip) {
+  try {
+    const res = await safeFetch(
+      `https://harmonica.serpents.workers.dev/${ip}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+          Accept: "application/json",
+        },
+      },
+      4000,
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data) return null;
+    const info = data.info || {};
+    const details = data.details || {};
+    const threatScore = info.score ?? info.fraud_score ?? info.threatScore ?? 0;
+    const risk = info.risk ? info.risk.charAt(0).toUpperCase() + info.risk.slice(1) : "Unknown";
+    return {
+      country: details.country || "Unknown",
+      countryCode: (details.country_code || "").toLowerCase(),
+      city: details.city || "",
+      org: details.isp || details.organization || "",
+      score: threatScore,
+      risk,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getIpMeta(ctx, ip) {
+  const cacheKey = `ipmeta:${ip}`;
+  const cached = await cacheGetJson(cacheKey);
+  if (cached) return cached;
+  const meta = (await FetchIPData(ip)) || {
+    country: "Unknown",
+    countryCode: "",
+    city: "",
+    org: "",
+    score: 0,
+    risk: "Unknown",
+  };
+  if (meta.country && meta.country !== "Unknown") await cachePutJson(ctx, cacheKey, meta);
+  return meta;
+}
+
+async function enrichWithPersistentCache(ctx, entries) {
+  return Promise.all(
+    entries.map(async (entry) => {
+      const cacheKey = `ipmeta:${entry.ip}`;
+      const cached = await cacheGetJson(cacheKey);
+      if (cached) return { ...entry, ...cached };
+      if (entry.country && entry.country !== "Unknown") await cachePutJson(ctx, cacheKey, entry);
+      return entry;
+    }),
+  );
+}
+
+async function resolveProxyPoolHost(host, port, ctx) {
+  const isIPHost = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+
+  if (isIPHost) {
+    if (isInIgnoredRange(host)) return [];
+    const meta = await getIpMeta(ctx, host);
+    return [{ host, port, ip: host, hostType: "ip", ...meta }];
+  }
+
+  let pool = await fetchDomainIpPool(host);
+  if (!pool.length) {
+    const single = await resolveIPv4ViaDoH(host);
+    if (single) {
+      const meta = await getIpMeta(ctx, single);
+      pool = [{ ip: single, ...meta }];
+    }
+  }
+
+  pool = pool.filter((p) => p.ip && !isInIgnoredRange(p.ip));
+  pool = await enrichWithPersistentCache(ctx, pool);
+
+  return pool.map((p) => ({
+    host,
+    port,
+    ip: p.ip,
+    hostType: "domain",
+    country: p.country,
+    countryCode: p.countryCode,
+    score: p.score,
+    risk: p.risk,
+  }));
+}
+
+async function buildProxyIpPool(cfg, ctx, hostName, forceRefresh = false) {
+  const cache = caches.default;
+  const poolCacheKey = new Request(`https://cf-proxyip-pool-cache.local/${hostName}`);
+  if (ctx && !forceRefresh) {
+    const cachedRes = await cache.match(poolCacheKey);
+    if (cachedRes) return cachedRes.json();
+  }
+
+  const seenHosts = new Set();
+  const hosts = (cfg.proxyPool || [])
+    .map((raw) => {
+      const [host, port = "443"] = raw.split(":");
+      return { host, port };
+    })
+    .filter(({ host }) => {
+      if (!host || seenHosts.has(host)) return false;
+      seenHosts.add(host);
+      return true;
+    });
+
+  const results = (
+    await Promise.all(hosts.map(({ host, port }) => resolveProxyPoolHost(host, port, ctx)))
+  ).flat();
+
+  if (ctx && results.length) {
+    const cacheResponse = new Response(JSON.stringify(results), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=21600" },
+    });
+    ctx.waitUntil(cache.put(poolCacheKey, cacheResponse));
+  }
+
+  return results;
+}
+
+function proxyEntryTag(entry, index) {
+  const countryTag = entry.countryCode
+    ? entry.countryCode.toUpperCase()
+    : (entry.country || "XX").slice(0, 2).toUpperCase();
+  const flag = countryCodeToFlagEmoji(entry.countryCode);
+  const hostTag = entry.hostType === "ip" ? "IP" : "Domain";
+  return `${flag}${countryTag}-${hostTag}-${index + 1}`;
+}
+
+function buildProxyEntryConfigs(entry, hostName, userID, index) {
+  const tag = proxyEntryTag(entry, index);
+  const proxyIP = `${entry.ip}:${entry.port}`;
+  const isPagesDeployment = hostName.endsWith(".pages.dev");
+  const xrayPort = pickRandomProxyPort(isPagesDeployment);
+  const sbPort = pickRandomProxyPort(isPagesDeployment);
+  const xray = buildLink({
+    core: "xray",
+    proto: xrayPort.proto,
+    userID,
+    hostName,
+    address: hostName,
+    port: xrayPort.port,
+    enhanced: true,
+    tag,
+    overrides: { proxyIP },
+  });
+  const sb = buildLink({
+    core: "sb",
+    proto: sbPort.proto,
+    userID,
+    hostName,
+    address: hostName,
+    port: sbPort.port,
+    tag,
+    overrides: { proxyIP },
+  });
+  return {
+    host: entry.host,
+    ip: entry.ip,
+    hostType: entry.hostType,
+    risk: entry.risk,
+    score: entry.score,
+    configs: [
+      { label: "Xray", link: xray },
+      { label: "Singbox", link: sb },
+    ],
+  };
+}
+
+export async function handleProxyIpsInfo(request, cfg, hostName, ctx, env) {
+  const headers = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "public, max-age=21600",
+  };
+
+  try {
+    const url = new URL(request.url);
+    const forceRefresh = url.searchParams.get("refresh") === "1";
+
+    const cache = caches.default;
+    const cacheKey = new Request(`https://cf-proxyips-cache.local/${hostName}`);
+    if (!forceRefresh) {
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+    }
+
+    const enriched = await buildProxyIpPool(cfg, ctx, hostName, forceRefresh);
+
+    const countryMap = new Map();
+    enriched.forEach((entry) => {
+      const countryKey = entry.country || "Unknown";
+      if (!countryMap.has(countryKey)) {
+        countryMap.set(countryKey, {
+          country: countryKey,
+          countryCode: entry.countryCode || "",
+          hostsMap: new Map(),
+        });
+      }
+      const countryGroup = countryMap.get(countryKey);
+      if (!countryGroup.countryCode && entry.countryCode)
+        countryGroup.countryCode = entry.countryCode;
+      const hostKey = entry.host;
+      if (!countryGroup.hostsMap.has(hostKey)) {
+        countryGroup.hostsMap.set(hostKey, {
+          host: hostKey,
+          hostType: entry.hostType,
+          entries: [],
+        });
+      }
+      countryGroup.hostsMap.get(hostKey).entries.push(entry);
+    });
+
+    const groups = [...countryMap.values()]
+      .map((countryGroup) => {
+        const hosts = [...countryGroup.hostsMap.values()]
+          .map((hostGroup) => {
+            const sortedEntries = [...hostGroup.entries].sort(
+              (a, b) => (a.score ?? 999) - (b.score ?? 999),
+            );
+            return {
+              host: hostGroup.host,
+              hostType: hostGroup.hostType,
+              entries: sortedEntries.map((entry, i) =>
+                buildProxyEntryConfigs(entry, hostName, cfg.userID, i),
+              ),
+            };
+          })
+          .sort((a, b) => (a.entries[0]?.score ?? 999) - (b.entries[0]?.score ?? 999));
+
+        const lowestEntry = hosts[0]?.entries[0];
+        return {
+          country: countryGroup.country,
+          countryCode: countryGroup.countryCode,
+          flag: countryCodeToFlagEmoji(countryGroup.countryCode),
+          lowestScore: lowestEntry?.score ?? null,
+          lowestRisk: lowestEntry?.risk ?? "Unknown",
+          hosts,
+        };
+      })
+      .sort((a, b) => (a.lowestScore ?? 999) - (b.lowestScore ?? 999));
+
+    const response = new Response(JSON.stringify({ groups }), { headers });
+    if (groups.length) ctx.waitUntil(cache.put(cacheKey, response.clone()));
+    return response;
+  } catch (e) {
+    return new Response(JSON.stringify({ groups: [], error: e.toString() }), { headers });
+  }
+}
+
+export async function handleConfigPage(userID, hostName, proxyAddress, workerName, nat64 = true) {
   const dream = buildLink({
     core: "xray",
     proto: "tls",
@@ -204,6 +579,27 @@ export async function handleConfigPage(userID, hostName, proxyAddress, workerNam
     enhanced: true,
   });
 
+  const nat64On = buildLink({
+    core: "xray",
+    proto: "tls",
+    userID,
+    hostName,
+    address: hostName,
+    port: 443,
+    tag: "NAT64",
+    overrides: { nat64: true },
+  });
+  const nat64Off = buildLink({
+    core: "xray",
+    proto: "tls",
+    userID,
+    hostName,
+    address: hostName,
+    port: 443,
+    tag: "NAT64",
+    overrides: { nat64: false },
+  });
+
   const settingsUrl = buildSettingsUrl(workerName);
   const workerLabel = hostName.split(".")[0] || "INDEX";
   const encodedSubName = encodeURIComponent(workerLabel);
@@ -212,18 +608,26 @@ export async function handleConfigPage(userID, hostName, proxyAddress, workerNam
   const subXrayUrlVEnhanced = `https://${hostName}/xray-enhanced/${userID}#${encodedSubName}`;
   const subClashUrl = `https://${hostName}/clash/${userID}?name=${encodedSubName}`;
   const subSbUrl = `https://${hostName}/sb/${userID}?name=${encodedSubName}`;
+  const subProxyIpsUrl = `https://${hostName}/proxy-ips/${userID}`;
 
   const finalHTML = panelHtml
-  .replace(/{{PROXY_ADDRESS}}/g, proxyAddress)
-  .replace(/{{CONFIG_DREAM}}/g, dream)
-  .replace(/{{CONFIG_FREEDOM}}/g, freedom)
-  .replace(/{{CONFIG_PATTNG}}/g, pattng)
-  .replace(/{{URL_WORKER_SETTINGS}}/g, settingsUrl)
-  .replace(/{{URL_V2RAYNG_ENHANCED}}/g, `${SENS.v2rayng()}${subXrayUrlVEnhanced}`)
-  .replace(/{{URL_V2RAYNG}}/g, `${SENS.v2rayng()}${subXrayUrlV}`)
-  .replace(/{{URL_CLASH}}/g, `${SENS.clash()}${encodeURIComponent(subClashUrl)}`)
-  .replace(/{{URL_HIDDIFY}}/g, `${SENS.hiddify()}${encodeURIComponent(subXrayUrlH)}`)
-  .replace(/{{URL_EXCLAVE}}/g, `${SENS.exclave()}${encodeURIComponent(subSbUrl)}&name=${encodedSubName}`);
+    .replace(/{{PROXY_ADDRESS}}/g, proxyAddress)
+    .replace(/{{CONFIG_DREAM}}/g, dream)
+    .replace(/{{CONFIG_FREEDOM}}/g, freedom)
+    .replace(/{{CONFIG_PATTNG}}/g, pattng)
+    .replace(/{{NAT64_DEFAULT}}/g, nat64 ? "on" : "off")
+    .replace(/{{CONFIG_NAT64_ON}}/g, nat64On)
+    .replace(/{{CONFIG_NAT64_OFF}}/g, nat64Off)
+    .replace(/{{URL_PROXYIPS}}/g, subProxyIpsUrl)
+    .replace(/{{URL_WORKER_SETTINGS}}/g, settingsUrl)
+    .replace(/{{URL_V2RAYNG_ENHANCED}}/g, `${SENS.v2rayng()}${subXrayUrlVEnhanced}`)
+    .replace(/{{URL_V2RAYNG}}/g, `${SENS.v2rayng()}${subXrayUrlV}`)
+    .replace(/{{URL_CLASH}}/g, `${SENS.clash()}${encodeURIComponent(subClashUrl)}`)
+    .replace(/{{URL_HIDDIFY}}/g, `${SENS.hiddify()}${encodeURIComponent(subXrayUrlH)}`)
+    .replace(
+      /{{URL_EXCLAVE}}/g,
+      `${SENS.exclave()}${encodeURIComponent(subSbUrl)}&name=${encodedSubName}`,
+    );
 
   return new Response(finalHTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
