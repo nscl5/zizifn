@@ -1,13 +1,13 @@
 const decodeSecure = (encoded) => atob(encoded);
 
 export const SENS = {
-  vless:   () => decodeSecure("dmxlc3M="),
-  ws:      () => decodeSecure("d3M="),
-  wsOpts:  () => decodeSecure("d3Mtb3B0czo="),
-  edLine:  () => decodeSecure("ZWFybHktZGF0YS1oZWFkZXItbmFtZTog"),
+  vless: () => decodeSecure("dmxlc3M="),
+  ws: () => decodeSecure("d3M="),
+  wsOpts: () => decodeSecure("d3Mtb3B0czo="),
+  edLine: () => decodeSecure("ZWFybHktZGF0YS1oZWFkZXItbmFtZTog"),
   hiddify: () => decodeSecure("aGlkZGlmZTovL2luc3RhbGwtY29uZmlnP3VybD0="),
   v2rayng: () => decodeSecure("djJyYXluZzovL2luc3RhbGwtY29uZmlnP3VybD0="),
-  clash:   () => decodeSecure("Y2xhc2g6Ly9pbnN0YWxsLWNvbmZpZz91cmw9"),
+  clash: () => decodeSecure("Y2xhc2g6Ly9pbnN0YWxsLWNvbmZpZz91cmw9"),
   exclave: () => decodeSecure("c246Ly9zdWJzY3JpcHRpb24/dXJsPQ=="),
 };
 
@@ -45,7 +45,6 @@ export const Config = {
       proxyPool: pool,
       proxyAddress: pool[0],
       workerName: env.WORKERNAME || "",
-      // set env var NAT64 = "off" to disable the NAT64 fallback
       nat64: env.NAT64 !== "off",
     };
   },
@@ -53,8 +52,6 @@ export const Config = {
 
 const IPV4_REGEX = /^\d{1,3}(\.\d{1,3}){3}$/;
 
-// Resolve a hostname to an IPv4 address via DNS-over-HTTPS.
-// Returns the input unchanged if it is already an IPv4 literal.
 export async function resolveIPv4ViaDoH(hostname) {
   if (IPV4_REGEX.test(hostname)) return hostname;
   try {
@@ -71,16 +68,10 @@ export async function resolveIPv4ViaDoH(hostname) {
   }
 }
 
-// Resolve a domain-based ProxyIP host to every backing IPv4 address
-// Cloudflare's own scamalytics mirror knows about, each already carrying
-// its risk score and geolocation — so a single call replaces the old
-// "one DNS answer + separate geolocate + separate risk lookup" chain.
-// This endpoint walks a real IP pool (tens of entries for hosts like
-// di.nscl.ir) and can take a while, hence the generous default timeout.
 export async function fetchDomainIpPool(domain, timeout = 60000) {
   try {
     const res = await safeFetch(
-      `https://cloudflare-scamalytics.pages.dev/api/domain/${encodeURIComponent(domain)}`,
+      `https://harmonica.serpents.workers.dev/api/domain/${encodeURIComponent(domain)}`,
       {},
       timeout,
     );
@@ -126,32 +117,13 @@ export function generateRandomPath(length = 28, query = "") {
   return `/${result}${query ? `?${query}` : ""}`;
 }
 
-// Append a per-config NAT64 / ProxyIP override onto a generated ws
-// path. The worker parses these case-insensitively (see
-// parsePathOverrides in network.js) purely for robustness — the
-// actual camouflage comes from the random noise characters that
-// generateRandomPath() already mixes upper/lower case into, not from
-// scrambling these keywords themselves.
 export function withConfigOverrides(path, { nat64, proxyIP } = {}) {
   const params = [];
   if (nat64 !== undefined) {
     params.push(`nat64=${nat64 ? "on" : "off"}`);
   }
   if (proxyIP) {
-    // Defensively un-encode a stray "%3A"/"%3a" back to a literal ":"
-    // first. proxyIP should already be a plain "host:port" string (see
-    // call sites), but if it ever arrives pre-percent-encoded from
-    // somewhere upstream, leaving that in place would make the single
-    // encoding pass below turn it into a doubly-escaped "...%253A..." -
-    // exactly the corrupted ws path this comment used to only warn about.
     const normalizedProxyIP = proxyIP.replace(/%3a/gi, ":");
-    // Not encodeURIComponent()'d here either: ":" is not a reserved
-    // delimiter inside a query value, and leaving it literal means
-    // clients that only do a single decode pass on the outer link (many
-    // do) still end up with a clean "proxyip=1.2.3.4:443" instead of a
-    // mangled "...%3A443". parsePathOverrides() in network.js reads it
-    // back with a plain string split, so no decoding is required on the
-    // server side either.
     params.push(`proxyip=${normalizedProxyIP}`);
   }
   if (!params.length) return path;
@@ -194,30 +166,19 @@ export const CORE_PRESETS = {
   },
 };
 
-// Cloudflare's own edge only proxies these specific ports - anything
-// else never reaches the Worker/Pages Function at all, on either a
-// workers.dev subdomain or a custom domain. Split into the TLS-capable
-// set (fronted with Cloudflare's own certificate, so security:"tls" in
-// the config) and the plaintext set (security:"none" - still runs over
-// the ws transport, just without an extra TLS layer on top).
 export const CF_TLS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
 export const CF_NON_TLS_PORTS = [80, 8080, 2052, 2082, 2086, 2095, 8880];
 
-// Picks a random (port, proto) pair for a client-facing ProxyIPs config,
-// so repeated copies don't all hand out the exact same "port 443, TLS"
-// config. A *.pages.dev deployment only fronts the TLS port set - Pages
-// Functions aren't reachable on the plaintext ports the way a Worker is
-// - so non-TLS/"tcp" configs are only offered off pages.dev.
 export function pickRandomProxyPort(isPagesDeployment) {
   const pool = isPagesDeployment
     ? CF_TLS_PORTS.map((port) => ({ port, proto: "tls" }))
-    : [...CF_TLS_PORTS.map((port) => ({ port, proto: "tls" })), ...CF_NON_TLS_PORTS.map((port) => ({ port, proto: "tcp" }))];
+    : [
+        ...CF_TLS_PORTS.map((port) => ({ port, proto: "tls" })),
+        ...CF_NON_TLS_PORTS.map((port) => ({ port, proto: "tcp" })),
+      ];
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-// Converts a 2-letter ISO country code into its flag emoji (regional
-// indicator symbols), e.g. "us" -> "🇺🇸". Used so country names in
-// subscription config remarks/tags carry more than just a bare code.
 export function countryCodeToFlagEmoji(countryCode) {
   if (!countryCode || countryCode.length !== 2) return "";
   const code = countryCode.toUpperCase();
@@ -226,18 +187,11 @@ export function countryCodeToFlagEmoji(countryCode) {
   return String.fromCodePoint(...points);
 }
 
-// Small helper around the edge Cache API, used to persist per-IP
-// geo/risk lookups (see getIpMeta/enrichWithPersistentCache in
-// routes.js) WITHOUT a KV namespace. KV was deliberately avoided here:
-// it has no built-in expiry, so a user who points ProxyIPs at a wrong
-// or malicious domain would leave that domain's IPs' (mis)cached
-// geo/risk data sitting around indefinitely, potentially bleeding into
-// later, correct lookups. Cache API entries expire on their own via
-// Cache-Control, so bad data self-heals within the TTL instead of
-// lingering forever.
 export async function cacheGetJson(key) {
   try {
-    const res = await caches.default.match(new Request(`https://cf-ipmeta-cache.local/${encodeURIComponent(key)}`));
+    const res = await caches.default.match(
+      new Request(`https://cf-ipmeta-cache.local/${encodeURIComponent(key)}`),
+    );
     if (!res) return null;
     return await res.json();
   } catch (e) {
@@ -248,15 +202,18 @@ export async function cacheGetJson(key) {
 export async function cachePutJson(ctx, key, value, maxAgeSeconds = 21600) {
   try {
     const res = new Response(JSON.stringify(value), {
-      headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${maxAgeSeconds}` },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": `public, max-age=${maxAgeSeconds}`,
+      },
     });
-    const put = caches.default.put(new Request(`https://cf-ipmeta-cache.local/${encodeURIComponent(key)}`), res);
+    const put = caches.default.put(
+      new Request(`https://cf-ipmeta-cache.local/${encodeURIComponent(key)}`),
+      res,
+    );
     if (ctx?.waitUntil) ctx.waitUntil(put);
     else await put;
-  } catch (e) {
-    // Best-effort: a Cache API miss should only cost us the caching, not
-    // break the feature it's caching for.
-  }
+  } catch (e) {}
 }
 
 export function makeName(tag, proto) {
