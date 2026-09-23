@@ -26,7 +26,7 @@ function notFoundPage(hostName, workerName) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Not Found</title>
+<title>Oops. Not Found</title>
 <style>
   body {
     background: #0d1117;
@@ -101,13 +101,28 @@ export default {
       if (url.pathname.startsWith(`/xray-enhanced/${cfg.userID}`))
         return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, true, cfg, env);
       if (url.pathname.startsWith(`/xray/${cfg.userID}`))
-        return handleIpSubscription(request, "xray", cfg.userID, url.hostname, ctx, false, cfg, env);
+        return handleIpSubscription(
+          request,
+          "xray",
+          cfg.userID,
+          url.hostname,
+          ctx,
+          false,
+          cfg,
+          env,
+        );
       if (url.pathname.startsWith(`/sb/${cfg.userID}`))
         return handleIpSubscription(request, "sb", cfg.userID, url.hostname, ctx, false, cfg, env);
       if (url.pathname.startsWith(`/clash/${cfg.userID}`))
         return handleClashConfig(request, cfg.userID, url.hostname, ctx);
       if (url.pathname.startsWith(`/${cfg.userID}`))
-        return handleConfigPage(cfg.userID, url.hostname, cfg.proxyAddress, cfg.workerName, cfg.nat64);
+        return handleConfigPage(
+          cfg.userID,
+          url.hostname,
+          cfg.proxyAddress,
+          cfg.workerName,
+          cfg.nat64,
+        );
 
       return new Response(notFoundPage(url.hostname, cfg.workerName), {
         status: 404,
