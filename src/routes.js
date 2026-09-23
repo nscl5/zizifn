@@ -440,6 +440,7 @@ function buildProxyEntryConfigs(entry, hostName, userID, index) {
     hostName,
     address: hostName,
     port: xrayPort.port,
+    enhanced: true,
     tag,
     overrides: { proxyIP },
   });
