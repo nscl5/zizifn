@@ -54,8 +54,8 @@ $${\color{silver}\large and \space add \space the \space following \space variab
 
 | **Secret Name** | **Required** | **Default** | **Description** |
 | ------ | :-----: | :------: | :-------------- |
-| `CLOUDFLARE_API_TOKEN_1` | ✔️Yes | -  | Your Cloudflare Account API Token, for account slot 1. It **must** have permission to **Edit Workers**. |
-| `CLOUDFLARE_ACCOUNT_ID_1` | ✔️Yes | - | Your Cloudflare Account ID, for account slot 1. |
+| `CLOUDFLARE_API_TOKEN` | ✔️Yes | -  | Your Cloudflare Account API Token, for account slot 1. It **must** have permission to **Edit Workers**. |
+| `CLOUDFLARE_ACCOUNT_ID` | ✔️Yes | - | Your Cloudflare Account ID, for account slot 1. |
 | `UUID` | Optional | `be0ff9df-1468-41a0-8865-796d1c6800db` | Your own [Version 4 UUID][1]. If not provided, the workflow will automatically generate a random one. |
 | `PROXYIP` | Optional | `di.nscl.ir` | Optional proxy IP or hostname. If omitted, the default value will be used. [ProxyIP tools][2] |
 | `PLACEMENT_MODE` | Optional | `off` | Worker [Placement][5] mode: `off`, `smart`, `region`, `host`, or `hostname`. Can also be picked per-run from the "Run workflow" dropdown when triggering the workflow manually. |
@@ -72,8 +72,8 @@ $${\color{silver}\large and \space add \space the \space following \space variab
 
 _The following two secrets are **required** and must be obtained from your own [Cloudflare account][3]_
 
-- _`CLOUDFLARE_API_TOKEN_1`_
-- _`CLOUDFLARE_ACCOUNT_ID_1`_
+- _`CLOUDFLARE_API_TOKEN`_
+- _`CLOUDFLARE_ACCOUNT_ID`_
 
 > [_**More details**_][4]
 
@@ -95,25 +95,25 @@ On the **Run workflow** form (Actions tab → Deploy Worker (Multi-Account) → 
 
 A plain `git push` to `main` (no form filled in) always deploys to slot 1 only, same as a single-account setup.
 
-Each slot has its own independent set of secrets, all following the same `_N` naming pattern, where `N` is the slot number (`1`–`4`):
+**Slot 1 uses the plain, unsuffixed secret names** (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, ...) — exactly like a normal single-account setup, so nothing changes for slot 1 if you're only deploying to one account. **Slots 2 and up use the same names with a `_N` suffix**, where `N` is the slot number:
 
 | **Slot** | **Secret (required)** | **Secret / Variable (optional)** |
 | :--: | :---- | :---- |
-| 1 | `CLOUDFLARE_API_TOKEN_1`, `CLOUDFLARE_ACCOUNT_ID_1` | `UUID_1`, `PROXYIP_1`, `WORKERNAME_1`, `CLOUDFLARE_ACCOUNT_1_LABEL` (variable) |
+| 1 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | `UUID`, `PROXYIP`, `WORKERNAME`, `CLOUDFLARE_ACCOUNT_LABEL` (variable) |
 | 2 | `CLOUDFLARE_API_TOKEN_2`, `CLOUDFLARE_ACCOUNT_ID_2` | `UUID_2`, `PROXYIP_2`, `WORKERNAME_2`, `CLOUDFLARE_ACCOUNT_2_LABEL` (variable) |
 | 3 | `CLOUDFLARE_API_TOKEN_3`, `CLOUDFLARE_ACCOUNT_ID_3` | `UUID_3`, `PROXYIP_3`, `WORKERNAME_3`, `CLOUDFLARE_ACCOUNT_3_LABEL` (variable) |
 | 4 | `CLOUDFLARE_API_TOKEN_4`, `CLOUDFLARE_ACCOUNT_ID_4` | `UUID_4`, `PROXYIP_4`, `WORKERNAME_4`, `CLOUDFLARE_ACCOUNT_4_LABEL` (variable) |
 
 A slot that isn't ticked — or whose required secrets were never set — is simply skipped, so leaving slots 2–4 empty is harmless; only slot 1 needs to be configured for a normal single-account setup.
 
-`CLOUDFLARE_ACCOUNT_N_LABEL` is a repository **Variable**, not a Secret (Settings → Secrets and variables → Actions → **Variables** tab), since it's just a human-readable name — e.g. `Personal`, `Client-A` — shown in the deploy step name and the run summary. It defaults to `Account N` if left unset.
+`CLOUDFLARE_ACCOUNT_LABEL` / `CLOUDFLARE_ACCOUNT_N_LABEL` is a repository **Variable**, not a Secret (Settings → Secrets and variables → Actions → **Variables** tab), since it's just a human-readable name — e.g. `Personal`, `Client-A` — shown in the deploy step name and the run summary. It defaults to `Account N` if left unset.
 
-To add a 5th (or further) account slot, copy one `account_N` block in the workflow's `workflow_dispatch` inputs, bump every `N` in it, add a matching `SEL_N` line and `add N` check in the **Build account matrix** step, and add that account's two required secrets.
+To add a 5th (or further) account slot, copy one `account_N` block in the workflow's `workflow_dispatch` inputs, bump every `N` in it, add a matching `SEL_N` line and `add N` check in the **Build account matrix** step, and add that account's two required secrets (as `CLOUDFLARE_API_TOKEN_N` / `CLOUDFLARE_ACCOUNT_ID_N` — the unsuffixed names are reserved for slot 1).
 
 ### To add a new Cloudflare account:
 
 1. Go to your repository → **Settings** → **Secrets and variables** → **Actions**.
-2. Add `CLOUDFLARE_API_TOKEN_N` and `CLOUDFLARE_ACCOUNT_ID_N` as new **Secrets**, where `N` is the next free slot number.
+2. Add `CLOUDFLARE_API_TOKEN_N` and `CLOUDFLARE_ACCOUNT_ID_N` as new **Secrets**, where `N` is the next free slot number (`2`, `3`, `4`, ...) — slot 1 uses the plain, unsuffixed names instead.
 3. _(Optional)_ Add `CLOUDFLARE_ACCOUNT_N_LABEL` as a new **Variable** with a friendly name for that account.
 4. _(Optional)_ Add `UUID_N`, `PROXYIP_N`, `WORKERNAME_N` if this account should use different values than the shared/default ones.
 5. On the next manual run, tick that account's checkbox on the "Run workflow" form.
